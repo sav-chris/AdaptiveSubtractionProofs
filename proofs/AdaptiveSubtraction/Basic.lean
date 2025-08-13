@@ -36,28 +36,6 @@ open MeasureTheory
 
 def quadratic_vertex (a h k x : ℝ) : ℝ := a * (x - h) ^ 2 + k
 
-theorem vertex_quadratic_has_minimum (a h k : ℝ) (ha : 0 < a) :
-    ∃ x₀, ∀ x, quadratic_vertex a h k x ≥ quadratic_vertex a h k x₀ := by
-  use h
-  intro x
-  unfold quadratic_vertex
-  have h1 : 0 ≤ (x - h) ^ 2 := sq_nonneg (x - h)
-  have h2 : 0 ≤ a * (x - h) ^ 2 := mul_nonneg (le_of_lt ha) h1
-  calc
-    a * (x - h) ^ 2 + k ≥ 0 + k := add_le_add_right h2 k
-    _ = a * (h - h) ^ 2 + k := by simp_all only
-    [
-      mul_nonneg_iff_of_pos_left,
-      zero_add,
-      sub_self,
-      ne_eq,
-      OfNat.ofNat_ne_zero,
-      not_false_eq_true,
-      zero_pow,
-      mul_zero
-    ]
-
-
 
 def quadratic (a b c x : ℝ) : ℝ := a * (x ^ 2) + b * x + c
 
@@ -71,19 +49,6 @@ lemma quadratic_eq_vertex_form (a b c : ℝ) (ha : a ≠ 0) :
   rw [h1]
   field_simp [ha]
   ring
-
-
-theorem quadratic_has_minimum (a b c : ℝ) (ha : 0 < a) :
-    ∃ x₀, ∀ x, quadratic a b c x ≥ quadratic a b c x₀ := by
-  let h := -b / (2 * a)
-  let k := c - b ^ 2 / (4 * a)
-  obtain ⟨x₀, hx₀⟩ := vertex_quadratic_has_minimum a h k ha
-  have h_eq : ∀ x, quadratic a b c x = quadratic_vertex a h k x :=
-    quadratic_eq_vertex_form a b c (ne_of_gt ha)
-  use x₀
-  intro x
-  rw [h_eq x, h_eq x₀]
-  exact hx₀ x
 
 
 theorem vertex_quadratic_minimizer (a h k : ℝ) (ha : 0 < a) :
@@ -130,7 +95,7 @@ def R (dI dB : Gradient) (D : Finset Pixel) (p : ℝ) : ℝ :=
   gradDot dI dI D - 2 * p * gradDot dB dI D + p ^ 2 * gradDot dB dB D
 
 
-noncomputable def p_opt (dI dB : Gradient) (D : Finset Pixel) : ℝ :=
+noncomputable def ρ_opt (dI dB : Gradient) (D : Finset Pixel) : ℝ :=
   gradDot dI dB D / gradDot dB dB D
 
 
@@ -226,17 +191,17 @@ lemma quadratic_vertex_minimizer_explicit
 theorem R_has_minimum_at_ρ_opt
   (dI dB : Gradient) (D : Finset Pixel)
   (h : 0 < gradDot dB dB D) :
-  ∀ ρ : ℝ, R dI dB D ρ ≥ R dI dB D (p_opt dI dB D) := by
+  ∀ ρ : ℝ, R dI dB D ρ ≥ R dI dB D (ρ_opt dI dB D) := by
     let a := gradDot dB dB D
     let beta := gradDot dB dI D
     let b := -2 * beta
     let c := gradDot dI dI D
-    let d := p_opt dI dB D
+    let d := ρ_opt dI dB D
     have ha    : a = gradDot dB dB D := rfl
     have hbeta : beta = gradDot dB dI D := rfl
     have hb    : b = -2 * beta := rfl
     have hc    : c = gradDot dI dI D := rfl
-    have hd    : d = p_opt dI dB D := rfl
+    have hd    : d = ρ_opt dI dB D := rfl
     have hz : 0 < a := h
 
     have R_eq (p : ℝ) : R dI dB D p = c - 2 * p * beta + p ^ 2 * a := by
@@ -283,7 +248,7 @@ theorem R_has_minimum_at_ρ_opt
       rw [hd]
       rw [hbeta]
       rw [ha]
-      rw [p_opt]
+      rw [ρ_opt]
       rw [symmetry_grad]
 
     apply quadratic_vertex_minimizer_explicit a b c beta d hz hβ hd_1
