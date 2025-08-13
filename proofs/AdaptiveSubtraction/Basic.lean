@@ -261,23 +261,9 @@ noncomputable def ρ_opt_1d
   (∫ x in Ω, deriv I x • deriv B x) / (∫ x in Ω, (deriv B x)^2)
 
 noncomputable def edginess (I B : ℝ → ℝ) (Ω : Set ℝ) (ρ : ℝ) : ℝ :=
-  ∫ x in Ω, (deriv (λ x => I x - ρ • B x)) x ^ 2
+  ∫ x in Ω, ((deriv (λ x => I x - ρ • B x)) x ) ^ 2
 
-/-
-theorem minimise_edginess
-  (I B : ℝ → ℝ)
-  (Ω : Set ℝ)
-  (hΩ : MeasurableSet Ω)
-  (hI : DifferentiableOn ℝ I Ω)
-  (hB : DifferentiableOn ℝ B Ω)
-  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 ≠ 0) :
-  ∀ ρ : ℝ, edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ := by
-    rw [edginess]
-    unfold edginess
-    trace_state
-    --rw [deriv_add, DifferentiableAt.const_mul]
-    sorry
--/
+
 
 lemma scalar_mul_differentiable_within
   (B : ℝ → ℝ)
@@ -340,3 +326,93 @@ lemma deriv_distribute
     ]
 
   rw [scalar_mul]
+
+
+lemma deriv_distribute'
+    (I B : ℝ → ℝ)
+    (Ω : Set ℝ)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (ρ : ℝ)
+    (x : Ω)
+    (hΩ : Ω ∈ 𝓝 (x : ℝ))
+:
+    deriv (λ x ↦ I x - ρ • B x) x = deriv I x - ρ • deriv B x
+:=
+    deriv_distribute I B Ω hI hB ρ ↑x x.prop hΩ
+
+
+lemma deriv_distribute'''
+  (I B : ℝ → ℝ)
+  (Ω : Set ℝ)
+  (hI : DifferentiableOn ℝ I Ω)
+  (hB : DifferentiableOn ℝ B Ω)
+  (x : Ω)
+  (hn : Ω ∈ 𝓝 (x : ℝ))
+:
+  ∀ (ρ : ℝ), deriv (λ x ↦ I x - ρ • B x) x = deriv I x - ρ • deriv B x
+:= by
+  intros ρ
+  let f := I
+  let g := λ x ↦ ρ • B x
+
+  have hf : DifferentiableWithinAt ℝ f Ω x := f_differentiable_within I Ω hI x x.prop
+  have hg : DifferentiableWithinAt ℝ g Ω x := scalar_mul_differentiable_within B Ω ρ x hB x.prop
+  have hf' : DifferentiableAt ℝ f x := hf.differentiableAt hn
+  have hg' : DifferentiableAt ℝ g x := hg.differentiableAt hn
+
+  have hB' : DifferentiableAt ℝ B x := (hB ↑x x.prop).differentiableAt hn
+
+  have deriv_h : deriv (λ x ↦ f x - g x) ↑x  = deriv f ↑x  - deriv g ↑x := by
+    apply deriv_sub hf' hg'
+
+  rw [deriv_h]
+
+  unfold f g
+
+  have scalar_mul : deriv (λ x ↦ ρ • B x) x = ρ • deriv B x := by
+    simp_all only
+    [
+      smul_eq_mul,
+      differentiableAt_const,
+      DifferentiableAt.fun_mul,
+      deriv_fun_sub,
+      deriv_fun_mul,
+      deriv_const',
+      zero_mul,
+      zero_add,
+      f,
+      g
+    ]
+
+  rw [scalar_mul]
+
+
+
+/-
+theorem minimise_edginess
+  (I B : ℝ → ℝ)
+  (Ω : Set ℝ)
+  (hΩ : MeasurableSet Ω)
+  (hI : DifferentiableOn ℝ I Ω)
+  (hB : DifferentiableOn ℝ B Ω)
+  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 ≠ 0)
+:
+    ∀ ρ : ℝ, edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ
+:= by
+    rw [edginess]
+    unfold edginess
+    unfold ρ_opt_1d
+
+    trace_state
+    --rw [deriv_distribute' I B Ω hI hB ρ x ]
+    --rw [deriv_add, DifferentiableAt.const_mul]
+    --apply (deriv_distribute I B Ω hI hB)
+
+
+    rw [deriv_distribute I B Ω hI hB ]
+
+
+    sorry
+
+-/
