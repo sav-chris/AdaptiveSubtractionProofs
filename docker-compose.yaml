@@ -1,0 +1,8 @@
+services:
+  lean:
+    build: .
+    container_name: lean4-mathlib
+    volumes:
+      - ./proofs:/home/lean/proofs
+    working_dir: /home/lean/proofs
+    tty: true
