@@ -24,6 +24,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.L1
 import Mathlib.MeasureTheory.Integral.Bochner.VitaliCaratheodory
 
+
 open scoped BigOperators
 open Set Real Filter Topology
 open Function
@@ -388,6 +389,175 @@ lemma deriv_distribute'''
   rw [scalar_mul]
 
 
+lemma deriv_distribute_square
+  (I B : ℝ → ℝ)
+  (Ω : Set ℝ)
+  (hI : DifferentiableOn ℝ I Ω)
+  (hB : DifferentiableOn ℝ B Ω)
+  (x : Ω)
+  (hn : Ω ∈ 𝓝 (x : ℝ))
+:
+  ∀ (ρ : ℝ), deriv (λ x ↦ I x - ρ • B x) x ^ 2 = (deriv I x - ρ • deriv B x ) ^ 2
+:= by
+    intro ρ
+    rw [deriv_distribute''' I B Ω hI hB x hn]
+
+
+
+noncomputable def c_coef (I : ℝ → ℝ) (Ω : Set ℝ) : ℝ := (∫ x in Ω, deriv I x) ^ 2
+
+noncomputable def b_coef (I B : ℝ → ℝ) (Ω : Set ℝ) : ℝ := - 2 • ∫ x in Ω, deriv I x • deriv B x
+
+noncomputable def a_coef ( B : ℝ → ℝ) (Ω : Set ℝ) : ℝ := ∫ x in Ω, deriv B x ^ 2
+
+
+noncomputable def edginess_polynomial (I B : ℝ → ℝ) (Ω : Set ℝ) (ρ : ℝ) : ℝ :=
+  --(∫ x in Ω, (deriv I x) )  - (2 • ρ • ∫ x in Ω, (deriv I x) • (deriv B x)) + ρ ^ 2 • ∫ x in Ω, (deriv B x)^2
+  (quadratic  (a_coef B Ω ) (b_coef I B Ω ) (c_coef I Ω) ρ )
+
+
+
+theorem edginess_polynomial_eq
+    (I B : ℝ → ℝ)
+    (Ω : Set ℝ)
+:
+    ∀ ρ : ℝ, edginess I B Ω ρ = edginess_polynomial I B Ω ρ
+:= by
+    unfold edginess edginess_polynomial
+    intro ρ
+    congr
+    sorry
+
+/-
+theorem quadratic_minimizer (a b c : ℝ) (ha : 0 < a) :
+  ∀ p : ℝ, quadratic a b c p ≥ quadratic_minimum a b c := by
+-/
+
+theorem edginess_is_quadratic
+  (I B : ℝ → ℝ)
+  (Ω : Set ℝ)
+:
+    ∀ (ρ : ℝ), edginess I B Ω ρ = (quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ρ)
+:= by
+{
+    intro ρ
+    rw [edginess_polynomial_eq]
+    unfold edginess_polynomial
+    rfl
+}
+
+lemma rho_opt_eq_minimizer_point
+  (I B : ℝ → ℝ)
+  (Ω : Set ℝ)
+  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
+:
+    ρ_opt_1d I B Ω = quadratic_minimizer_point (a_coef B Ω) (b_coef I B Ω)
+:= by
+{
+    unfold ρ_opt_1d quadratic_minimizer_point a_coef b_coef
+    field_simp [hB_nonzero]
+    ring
+}
+
+
+theorem minimized_edginess
+    (I B : ℝ → ℝ)
+    (Ω : Set ℝ)
+    (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
+:
+    edginess I B Ω (ρ_opt_1d I B Ω) = quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)
+:= by
+{
+    rw [edginess_polynomial_eq]
+    unfold edginess_polynomial
+    unfold quadratic_minimum
+    rw [rho_opt_eq_minimizer_point]
+    apply hB_nonzero
+}
+
+theorem minimise_edginess
+    (I B : ℝ → ℝ)
+    (Ω : Set ℝ)
+    (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
+:
+    ∀ (ρ : ℝ), edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ := by
+{
+    let lhs := edginess I B Ω (ρ_opt_1d I B Ω)
+    change ∀ (ρ : ℝ), lhs ≤ edginess I B Ω ρ
+
+    have ha_pos : 0 < a_coef B Ω := by
+      unfold a_coef
+      exact hB_nonzero
+
+    have h_lhs_eq_min : lhs = quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) := by
+        apply minimized_edginess
+        apply hB_nonzero
+
+    intro ρ
+    rw [edginess_is_quadratic]
+    rw [h_lhs_eq_min]
+    apply quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos
+}
+
+/-
+theorem minimise_edginess_1
+  (I B : ℝ → ℝ)
+  (Ω : Set ℝ)
+  (hΩ : MeasurableSet Ω)
+  (hI : DifferentiableOn ℝ I Ω)
+  (hB : DifferentiableOn ℝ B Ω)
+  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
+  (x : Ω)
+
+  (hn : Ω ∈ 𝓝 (x : ℝ))
+:
+    ∀ (ρ : ℝ), edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ
+:= by
+{
+    let lhs : ℝ := edginess I B Ω (ρ_opt_1d I B Ω)
+    change ∀ (ρ : ℝ), lhs ≤ edginess I B Ω ρ
+
+    intro ρ
+    rw [edginess_is_quadratic]
+    --revert ρ
+
+    have ha_pos : 0 < (a_coef B Ω) := by
+    {
+        unfold a_coef
+        apply hB_nonzero
+    }
+
+
+
+    trace_state
+    --apply (quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ )
+
+
+    --change ∀ (ρ : ℝ), lhs ≤ edginess I B Ω ρ
+    /-
+    intro ρ
+    rw [edginess_is_quadratic]
+    rw [edginess_is_quadratic]
+
+    have ha_pos : 0 < (a_coef B Ω) := by
+    {
+        unfold a_coef
+        apply hB_nonzero
+    }
+
+
+    let lhs : ℝ := quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) (ρ_opt_1d I B Ω)
+
+    change lhs ≤ quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ρ
+    trace_state
+
+    quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ
+    -/
+
+
+
+}
+-/
 
 /-
 theorem minimise_edginess
@@ -396,23 +566,54 @@ theorem minimise_edginess
   (hΩ : MeasurableSet Ω)
   (hI : DifferentiableOn ℝ I Ω)
   (hB : DifferentiableOn ℝ B Ω)
-  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 ≠ 0)
+  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
+  (x : Ω)
+
+  (hn : Ω ∈ 𝓝 (x : ℝ))
 :
-    ∀ ρ : ℝ, edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ
+    ∀ (ρ : ℝ), edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ
 := by
-    rw [edginess]
-    unfold edginess
-    unfold ρ_opt_1d
-
+    rw [edginess_polynomial_eq]
+    intro ρ
+    rw [edginess_polynomial_eq]
     trace_state
-    --rw [deriv_distribute' I B Ω hI hB ρ x ]
-    --rw [deriv_add, DifferentiableAt.const_mul]
-    --apply (deriv_distribute I B Ω hI hB)
 
+    unfold edginess_polynomial
 
-    rw [deriv_distribute I B Ω hI hB ]
+    have ha_pos : 0 < (a_coef B Ω) := by
+    {
+        unfold a_coef
+        apply hB_nonzero
+    }
 
-
-    sorry
-
+    have min_hyp:
+        (quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)) ≤
+        quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ρ
+    := by
+    {
+        apply (quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ )
+    }
 -/
+    --trace_state
+
+    /-
+    have min_hyp_ρ_opt :
+        quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) (ρ_opt_1d I B Ω) ≤
+        quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)
+    := by
+    {
+        --rw [(quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ ) ]
+        --unfold quadratic_minimum
+        --unfold quadratic
+        --unfold quadratic_minimizer_point
+        --unfold quadratic
+        --simp only [add_le_add_iff_right]
+
+        trace_state
+    }
+    -/
+
+
+    --apply (quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ )
+
+   -- trace_state
