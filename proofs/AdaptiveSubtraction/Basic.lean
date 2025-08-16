@@ -417,6 +417,81 @@ noncomputable def edginess_polynomial (I B : ℝ → ℝ) (Ω : Set ℝ) (ρ : �
 
 
 
+/-
+
+deriv (f - g) x = deriv f x - deriv g x :=
+  (hf.hasDerivAt.sub hg.hasDerivAt).deriv
+
+-/
+
+lemma deriv_distributes_over_sub_within_integral
+    (I B : ℝ → ℝ)
+    (Ω : Set ℝ)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (ρ : ℝ )
+    (hΩ_open : IsOpen Ω)
+:
+    ∫ x in Ω, deriv (λ x ↦ I x - ρ • B x) x ^ 2 =
+    ∫ x in Ω, (λ x ↦ (deriv I x ) - ρ • (deriv B x) ) x ^ 2
+:= by
+{
+    let f := I
+    let g := λ x ↦ ρ • B x
+
+    congr
+    ext1 x
+    apply congrArg (λ y => y ^ 2)
+
+    --revert x
+
+    --trace_state
+
+    --have hΩ : x ∈ Ω := x.prop
+    have hΩ : x ∈ Ω := sorry
+    have hn : Ω ∈ 𝓝 x := hΩ_open.mem_nhds hΩ
+
+    change deriv (λ x ↦ f x - g x) x = (λ x ↦ deriv I x - ρ • deriv B x) x
+
+    simp only [smul_eq_mul]
+
+    have hf : DifferentiableWithinAt ℝ f Ω x := f_differentiable_within I Ω hI x hΩ
+    have hg : DifferentiableWithinAt ℝ g Ω x := scalar_mul_differentiable_within B Ω ρ x hB hΩ
+    have hf' : DifferentiableAt ℝ f x := hf.differentiableAt hn
+    have hg' : DifferentiableAt ℝ g x := hg.differentiableAt hn
+
+    have hB' : DifferentiableAt ℝ B x := (hB ↑x hΩ).differentiableAt hn
+
+    have deriv_h : deriv (λ x ↦ f x - g x) x = deriv f x - deriv g x := by
+      apply deriv_sub hf' hg'
+
+    have deriv_proof : deriv (f - g) x = deriv f x - deriv g x :=
+        (hf'.hasDerivAt.sub hg'.hasDerivAt).deriv
+
+    rw [deriv_h]
+
+    unfold f g
+
+    have scalar_mul : deriv (λ x ↦ ρ • B x) x = ρ • deriv B x := by
+      simp_all only
+      [
+        smul_eq_mul,
+        differentiableAt_const,
+        DifferentiableAt.fun_mul,
+        deriv_fun_sub,
+        deriv_fun_mul,
+        deriv_const',
+        zero_mul,
+        zero_add,
+        f,
+        g
+      ]
+
+    rw [scalar_mul]
+    rfl
+}
+
+
 theorem edginess_polynomial_eq
     (I B : ℝ → ℝ)
     (Ω : Set ℝ)
@@ -425,13 +500,24 @@ theorem edginess_polynomial_eq
 := by
     unfold edginess edginess_polynomial
     intro ρ
-    congr
+    unfold quadratic
+    unfold a_coef b_coef c_coef
+    ring
+
+    /-
+    have hI : DifferentiableOn ℝ I Ω := sorry
+    have hB : DifferentiableOn ℝ B Ω := sorry
+    have x : Ω := sorry
+    have hn : Ω ∈ 𝓝 (x : ℝ) := sorry
+
+    apply (deriv_distribute_square I B Ω hI hB x hn )
+    -/
+
+    trace_state
+
     sorry
 
-/-
-theorem quadratic_minimizer (a b c : ℝ) (ha : 0 < a) :
-  ∀ p : ℝ, quadratic a b c p ≥ quadratic_minimum a b c := by
--/
+    --apply congrArg (λ y => y ^ 2)
 
 theorem edginess_is_quadratic
   (I B : ℝ → ℝ)
@@ -498,122 +584,3 @@ theorem minimise_edginess
     rw [h_lhs_eq_min]
     apply quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos
 }
-
-/-
-theorem minimise_edginess_1
-  (I B : ℝ → ℝ)
-  (Ω : Set ℝ)
-  (hΩ : MeasurableSet Ω)
-  (hI : DifferentiableOn ℝ I Ω)
-  (hB : DifferentiableOn ℝ B Ω)
-  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
-  (x : Ω)
-
-  (hn : Ω ∈ 𝓝 (x : ℝ))
-:
-    ∀ (ρ : ℝ), edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ
-:= by
-{
-    let lhs : ℝ := edginess I B Ω (ρ_opt_1d I B Ω)
-    change ∀ (ρ : ℝ), lhs ≤ edginess I B Ω ρ
-
-    intro ρ
-    rw [edginess_is_quadratic]
-    --revert ρ
-
-    have ha_pos : 0 < (a_coef B Ω) := by
-    {
-        unfold a_coef
-        apply hB_nonzero
-    }
-
-
-
-    trace_state
-    --apply (quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ )
-
-
-    --change ∀ (ρ : ℝ), lhs ≤ edginess I B Ω ρ
-    /-
-    intro ρ
-    rw [edginess_is_quadratic]
-    rw [edginess_is_quadratic]
-
-    have ha_pos : 0 < (a_coef B Ω) := by
-    {
-        unfold a_coef
-        apply hB_nonzero
-    }
-
-
-    let lhs : ℝ := quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) (ρ_opt_1d I B Ω)
-
-    change lhs ≤ quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ρ
-    trace_state
-
-    quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ
-    -/
-
-
-
-}
--/
-
-/-
-theorem minimise_edginess
-  (I B : ℝ → ℝ)
-  (Ω : Set ℝ)
-  (hΩ : MeasurableSet Ω)
-  (hI : DifferentiableOn ℝ I Ω)
-  (hB : DifferentiableOn ℝ B Ω)
-  (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
-  (x : Ω)
-
-  (hn : Ω ∈ 𝓝 (x : ℝ))
-:
-    ∀ (ρ : ℝ), edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ
-:= by
-    rw [edginess_polynomial_eq]
-    intro ρ
-    rw [edginess_polynomial_eq]
-    trace_state
-
-    unfold edginess_polynomial
-
-    have ha_pos : 0 < (a_coef B Ω) := by
-    {
-        unfold a_coef
-        apply hB_nonzero
-    }
-
-    have min_hyp:
-        (quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)) ≤
-        quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ρ
-    := by
-    {
-        apply (quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ )
-    }
--/
-    --trace_state
-
-    /-
-    have min_hyp_ρ_opt :
-        quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) (ρ_opt_1d I B Ω) ≤
-        quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)
-    := by
-    {
-        --rw [(quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ ) ]
-        --unfold quadratic_minimum
-        --unfold quadratic
-        --unfold quadratic_minimizer_point
-        --unfold quadratic
-        --simp only [add_le_add_iff_right]
-
-        trace_state
-    }
-    -/
-
-
-    --apply (quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos ρ )
-
-   -- trace_state
