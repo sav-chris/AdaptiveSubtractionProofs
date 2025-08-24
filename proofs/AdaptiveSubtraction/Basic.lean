@@ -25,6 +25,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.L1
 import Mathlib.MeasureTheory.Integral.Bochner.VitaliCaratheodory
 
 
+
 open scoped BigOperators
 open Set Real Filter Topology
 open Function
@@ -417,12 +418,75 @@ noncomputable def edginess_polynomial (I B : ℝ → ℝ) (Ω : Set ℝ) (ρ : �
 
 
 
-/-
 
-deriv (f - g) x = deriv f x - deriv g x :=
-  (hf.hasDerivAt.sub hg.hasDerivAt).deriv
+lemma deriv_f_g
+    (f g : ℝ → ℝ)
+    (Ω : Set ℝ)
+    (x : ℝ )
+    (hf : DifferentiableOn ℝ f Ω)
+    (hg : DifferentiableOn ℝ g Ω)
+    (hΩ_open : IsOpen Ω)
+    ( hx : x ∈ Ω )
+:
+    deriv (f - g) x = deriv f x - deriv g x
+:= by
+{
+    have hn : Ω ∈ 𝓝 x := hΩ_open.mem_nhds hx
+    have hfx : DifferentiableAt ℝ f x := hf.differentiableAt hn
+    have hgx : DifferentiableAt ℝ g x := hg.differentiableAt hn
 
--/
+    exact deriv_sub hfx hgx
+}
+
+
+lemma deriv_distributes
+    (I B : ℝ → ℝ)
+    (x : ℝ )
+    (Ω : Set ℝ)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (ρ : ℝ )
+    (hΩ_open : IsOpen Ω)
+    ( hΩ : x ∈ Ω )
+:
+    deriv (λ x ↦ I x - ρ • B x) x ^ 2 = (λ x ↦ (deriv I x ) - ρ • (deriv B x) ) x ^ 2
+:= by
+{
+    apply congrArg (λ y => y ^ 2)
+
+    let f := I
+    let g := λ x ↦ ρ • B x
+
+    let gg := λ x ↦ ρ • (deriv B x)
+
+    have hn : Ω ∈ 𝓝 x := hΩ_open.mem_nhds hΩ
+    have hf : DifferentiableWithinAt ℝ f Ω x := f_differentiable_within I Ω hI x hΩ
+    have hg : DifferentiableWithinAt ℝ g Ω x := scalar_mul_differentiable_within B Ω ρ x hB hΩ
+    have hf' : DifferentiableAt ℝ f x := hf.differentiableAt hn
+    have hg' : DifferentiableAt ℝ g x := hg.differentiableAt hn
+    have hB' : DifferentiableAt ℝ B x := (hB x hΩ).differentiableAt hn
+
+    change deriv (λ x => f x - g x) x = (λ x ↦ (deriv f x ) - ρ • (deriv B x) ) x
+
+    change deriv (λ x => f x - g x) x = (λ x ↦ (deriv f x ) - (gg x) ) x
+
+    have ρBh : (deriv g x) = gg x := by
+    {
+        unfold gg
+        unfold g
+        simp_all only [smul_eq_mul, deriv_const_mul_field', f, g]
+    }
+    simp only [←ρBh]
+
+    change deriv (f - g ) x = (deriv f x) - (deriv g x)
+
+    rw [deriv_sub]
+
+    apply hf'
+    apply hg'
+}
+
+
 
 lemma deriv_distributes_over_sub_within_integral
     (I B : ℝ → ℝ)
@@ -436,88 +500,78 @@ lemma deriv_distributes_over_sub_within_integral
     ∫ x in Ω, (λ x ↦ (deriv I x ) - ρ • (deriv B x) ) x ^ 2
 := by
 {
-    let f := I
-    let g := λ x ↦ ρ • B x
-
+    -- congr 1
+    congr
+    trace_state
+    ext1 x
+    --intro x hx
+    have hΩ : x ∈ Ω := sorry
+    apply (deriv_distributes I B x Ω hI hB ρ hΩ_open hΩ )
+    /-
     congr
     ext1 x
-    apply congrArg (λ y => y ^ 2)
+    apply (deriv_distributes I B x Ω hI hB ρ hΩ_open )
+    -/
+    --apply integral_congr_set
 
-    --revert x
 
-    --trace_state
+    trace_state
 
-    --have hΩ : x ∈ Ω := x.prop
-    have hΩ : x ∈ Ω := sorry
-    have hn : Ω ∈ 𝓝 x := hΩ_open.mem_nhds hΩ
-
-    change deriv (λ x ↦ f x - g x) x = (λ x ↦ deriv I x - ρ • deriv B x) x
-
-    simp only [smul_eq_mul]
-
-    have hf : DifferentiableWithinAt ℝ f Ω x := f_differentiable_within I Ω hI x hΩ
-    have hg : DifferentiableWithinAt ℝ g Ω x := scalar_mul_differentiable_within B Ω ρ x hB hΩ
-    have hf' : DifferentiableAt ℝ f x := hf.differentiableAt hn
-    have hg' : DifferentiableAt ℝ g x := hg.differentiableAt hn
-
-    have hB' : DifferentiableAt ℝ B x := (hB ↑x hΩ).differentiableAt hn
-
-    have deriv_h : deriv (λ x ↦ f x - g x) x = deriv f x - deriv g x := by
-      apply deriv_sub hf' hg'
-
-    have deriv_proof : deriv (f - g) x = deriv f x - deriv g x :=
-        (hf'.hasDerivAt.sub hg'.hasDerivAt).deriv
-
-    rw [deriv_h]
-
-    unfold f g
-
-    have scalar_mul : deriv (λ x ↦ ρ • B x) x = ρ • deriv B x := by
-      simp_all only
-      [
-        smul_eq_mul,
-        differentiableAt_const,
-        DifferentiableAt.fun_mul,
-        deriv_fun_sub,
-        deriv_fun_mul,
-        deriv_const',
-        zero_mul,
-        zero_add,
-        f,
-        g
-      ]
-
-    rw [scalar_mul]
-    rfl
 }
 
+/-
+deriv_distributes
+    (I B : ℝ → ℝ)
+    (x : ℝ )
+    (Ω : Set ℝ)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (ρ : ℝ )
+    (hΩ_open : IsOpen Ω)
+    ( hΩ : x ∈ Ω )
+-/
 
 theorem edginess_polynomial_eq
     (I B : ℝ → ℝ)
     (Ω : Set ℝ)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ_open : IsOpen Ω)
 :
     ∀ ρ : ℝ, edginess I B Ω ρ = edginess_polynomial I B Ω ρ
 := by
+{
     unfold edginess edginess_polynomial
     intro ρ
     unfold quadratic
     unfold a_coef b_coef c_coef
     ring
 
-    /-
-    have hI : DifferentiableOn ℝ I Ω := sorry
-    have hB : DifferentiableOn ℝ B Ω := sorry
-    have x : Ω := sorry
-    have hn : Ω ∈ 𝓝 (x : ℝ) := sorry
+    rw [(deriv_distributes_over_sub_within_integral I B Ω hI hB ρ hΩ_open )]
 
-    apply (deriv_distribute_square I B Ω hI hB x hn )
-    -/
+    have h_pow_deriv
+    :
+        ((λ x ↦ deriv I x - ρ • deriv B x) )^ 2 =
+        (deriv I ) ^ 2 - (2 • ρ • deriv B • deriv I) + (ρ • ρ • deriv B • deriv B)
+    := by
+    {
+        ext x
+        simp only
+        [
+            smul_eq_mul, Pi.pow_apply, nsmul_eq_mul,
+            Nat.cast_ofNat, Algebra.mul_smul_comm,
+            Pi.add_apply, Pi.sub_apply, Pi.smul_apply,
+            Pi.mul_apply, Pi.ofNat_apply
+        ]
+        ring
+    }
+
+    --rw [h_pow_deriv]
 
     trace_state
 
-    sorry
+}
 
-    --apply congrArg (λ y => y ^ 2)
 
 theorem edginess_is_quadratic
   (I B : ℝ → ℝ)
