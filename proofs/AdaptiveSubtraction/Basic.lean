@@ -175,7 +175,7 @@ lemma quadratic_vertex_minimizer_explicit
 
   have lhs_final :  a * (β / a) ^ 2 + b * (β / a) = - (β^2)/a := by
     rw [pow_two]
-    ring
+    ring_nf
     rw [hβ]
     simp only [one_div, neg_mul, even_two, Even.neg_pow, inv_pow]
     field_simp
@@ -186,7 +186,7 @@ lemma quadratic_vertex_minimizer_explicit
   simp only [one_div, neg_mul, even_two, Even.neg_pow, ge_iff_le]
 
   rw [pow_two]
-  ring
+  ring_nf
   rfl
 
 
@@ -592,21 +592,6 @@ lemma deriv_distributes_over_sub_within_integral
 }
 
 
-
--- deriv_distributes
-
-/-
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (hM: MeasurableSet Ω)
-    (hI : DifferentiableOn ℝ I Ω)
-    (hB : DifferentiableOn ℝ B Ω)
-    (ρ : ℝ)
-    (hΩ_open : IsOpen Ω)
-
--/
-
 lemma expand_squared_term
     (I B : ℝ → ℝ)
     (w h : ℝ)
@@ -666,27 +651,9 @@ lemma expand_squared_term
     }
 
     filter_upwards [h_deriv_eq] with x hx
-    ring
+    ring_nf
     simp only [smul_eq_mul]
     ring
-}
-
-lemma lhs_eq_rhs_2
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (hM: MeasurableSet Ω)
-    (hI : DifferentiableOn ℝ I Ω)
-    (hB : DifferentiableOn ℝ B Ω)
-    (ρ : ℝ)
-    (hΩ_open : IsOpen Ω)
-:
-    ∫ (x : ℝ) in Ω, -(deriv I x * ρ * deriv B x * 2) + deriv I x ^ 2 + (ρ ^ 2) * deriv B x ^ 2 =
-    (∫ (x : ℝ) in Ω, -2 * ρ *(deriv I x * deriv B x )) + (∫ (x : ℝ) in Ω, deriv I x ^ 2) + (ρ ^ 2) * (∫ (x : ℝ) in Ω, deriv B x ^ 2)
-:= by
-{
-    trace_state
-    sorry
 }
 
 
@@ -715,6 +682,8 @@ lemma integral_distributes_over_addition
         ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, (f x)) - (∫ (x : ℝ) in Ω, (g x)) + ∫ (x : ℝ) in Ω, (h x)
     := by
     {
+
+        simp only [sub_add_eq_add_sub]
         trace_state
 
         sorry
@@ -774,27 +743,25 @@ theorem edginess_polynomial_eq
     intro ρ
     unfold quadratic
     unfold a_coef b_coef c_coef
-    ring
+    ring_nf
 
     rw [(deriv_distributes_over_sub_within_integral I B w h Ω hM hI hB ρ hΩ_open )]
 
     rw [(expand_squared_term I B w h Ω hM hI hB ρ hΩ_open )]
 
-    --change ∫ (x : ℝ) in Ω, (deriv I x) ^ 2 - 2 • ρ • deriv I x • deriv B x + (ρ • deriv B x) ^ 2 = ((∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + ρ * -2 • ∫ (x : ℝ) in Ω, deriv I x • deriv B x) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
-    ring
+    ring_nf
     simp_all only [smul_eq_mul, Int.reduceNeg, neg_smul, zsmul_eq_mul, Int.cast_ofNat, mul_neg]
 
     have ρB_squared : (λ x ↦ (ρ * deriv B x ) )^ 2 = λ x ↦ ρ ^ 2 * (deriv B x) ^ 2 := by
     {
         funext x
-        ring
+        ring_nf
         simp_all only [Pi.pow_apply]
         simp only [mul_pow]
     }
 
     have rest_lemma :
         ∫ (x : ℝ) in Ω, deriv I x ^ 2 - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
-        -- ∫ (x : ℝ) in Ω, deriv I x ^ 2 - 2 • (ρ * (deriv I x * deriv B x)) + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x) * ρ + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
     := by
     {
         rw [ (integral_distributes_over_addition I B w h Ω hM hI hB ρ hΩ_open) ]
@@ -817,7 +784,6 @@ theorem edginess_is_quadratic
 := by
 {
     intro ρ
-    trace_state
     rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ_open)]
     unfold edginess_polynomial
     rfl
@@ -834,20 +800,8 @@ lemma rho_opt_eq_minimizer_point
 {
     unfold ρ_opt_1d quadratic_minimizer_point a_coef b_coef
     field_simp [hB_nonzero]
-    ring
+    ring_nf
 }
-
-
-/-
-
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (hM: MeasurableSet Ω)
-    (hI : DifferentiableOn ℝ I Ω)
-    (hB : DifferentiableOn ℝ B Ω)
-    (hΩ_open : IsOpen Ω)
--/
 
 
 theorem minimized_edginess
@@ -866,42 +820,10 @@ theorem minimized_edginess
     rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ )]
     unfold edginess_polynomial
     unfold quadratic_minimum
-    rw [rho_opt_eq_minimizer_point]
-    apply hB_nonzero
-    trace_state
-    sorry
-    --apply hI
-    --apply hB
-    --exact hΩ
+    rw [(rho_opt_eq_minimizer_point I B Ω hB_nonzero)]
 }
 
 
-
-/-
-theorem minimized_edginess
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (hM: MeasurableSet Ω)
-    (hB_nonzero : ∫ x in Ω, (deriv B x)^2 > 0)
-    (hI : DifferentiableOn ℝ I Ω)
-    (hB : DifferentiableOn ℝ B Ω)
-    (hΩ : IsOpen Ω)
-:
-    edginess I B Ω (ρ_opt_1d I B Ω) = quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)
-:= by
-{
-    rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ )]
-    unfold edginess_polynomial
-    unfold quadratic_minimum
-    rw [rho_opt_eq_minimizer_point]
-    apply hB_nonzero
-    trace_state
-    apply hI
-    apply hB
-    exact hΩ
-}
--/
 
 
 theorem minimise_edginess
@@ -927,16 +849,10 @@ theorem minimise_edginess
     have h_lhs_eq_min : lhs = quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) := by
     {
         apply (minimized_edginess I B w h Ω hM hB_nonzero hI hB hΩ)
-        --apply hB_nonzero
-        -- TO DO: Simplify?
     }
 
     intro ρ
-    rw [edginess_is_quadratic]
+    rw [(edginess_is_quadratic I B w h Ω hM hI hB hΩ)]
     rw [h_lhs_eq_min]
     apply quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos
-    trace_state
-    simp_all only [gt_iff_lt, lhs]
-    apply w
-    apply ρ
 }
