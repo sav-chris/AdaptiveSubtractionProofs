@@ -24,6 +24,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.L1
 import Mathlib.MeasureTheory.Integral.Bochner.VitaliCaratheodory
 
+import Mathlib.Order.RelClasses
 
 
 open scoped BigOperators
@@ -405,7 +406,7 @@ lemma deriv_distribute_square
 
 
 
-noncomputable def c_coef (I : ℝ → ℝ) (Ω : Set ℝ) : ℝ := (∫ x in Ω, deriv I x) ^ 2
+noncomputable def c_coef (I : ℝ → ℝ) (Ω : Set ℝ) : ℝ := (∫ x in Ω, (deriv I x) ^ 2)
 
 noncomputable def b_coef (I B : ℝ → ℝ) (Ω : Set ℝ) : ℝ := - 2 • ∫ x in Ω, deriv I x • deriv B x
 
@@ -413,7 +414,7 @@ noncomputable def a_coef ( B : ℝ → ℝ) (Ω : Set ℝ) : ℝ := ∫ x in Ω,
 
 
 noncomputable def edginess_polynomial (I B : ℝ → ℝ) (Ω : Set ℝ) (ρ : ℝ) : ℝ :=
-  --(∫ x in Ω, (deriv I x) )  - (2 • ρ • ∫ x in Ω, (deriv I x) • (deriv B x)) + ρ ^ 2 • ∫ x in Ω, (deriv B x)^2
+  --(∫ x in Ω, (deriv I x) ^ 2 )  - (2 • ρ • ∫ x in Ω, (deriv I x) • (deriv B x)) + ρ ^ 2 • (∫ x in Ω, (deriv B x) ^ 2 )
   (quadratic  (a_coef B Ω ) (b_coef I B Ω ) (c_coef I Ω) ρ )
 
 
@@ -485,48 +486,6 @@ lemma deriv_distributes
     apply hf'
     apply hg'
 }
-
-noncomputable def func_on_Ω
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (ρ : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (x : {x // x ∈ Ω}) : ℝ
-:=
-    deriv (λ z ↦ I z - ρ • B z) x.val ^ 2
-
-
-
-noncomputable def func_dist_on_Ω
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (ρ : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (x : {x // x ∈ Ω}) : ℝ
-:=
-    (deriv I x.val - ρ • deriv B x.val) ^ 2
-
-
-noncomputable def func_on_ℝ
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (ρ : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
-    (x : ℝ) : ℝ
-:=
-    if hx : x ∈ Ω then
-      func_on_Ω I B w h ρ Ω ⟨x, hx⟩
-    else
-      0
-
-noncomputable def int_on_func
-    (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (ρ : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h) : ℝ
-:=
-    ∫ x in Ω, func_on_ℝ I B w h ρ Ω x
-
 
 
 lemma deriv_distributes_over_sub_within_integral
@@ -657,47 +616,68 @@ lemma expand_squared_term
 }
 
 
+
+lemma distribute_integral_fgh
+    (f g h : ℝ → ℝ)
+    (w l : ℝ)
+    (Ω : Set ℝ := Set.Ioo w l)
+    (hIf : Integrable f (volume.restrict Ω))
+    (hIg : Integrable g (volume.restrict Ω))
+    (hIh : Integrable h (volume.restrict Ω))
+:
+    ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, (f x)) - (∫ (x : ℝ) in Ω, (g x)) + ∫ (x : ℝ) in Ω, (h x)
+:= by
+{
+    let ff := λ x ↦ (f x) - (g x)
+
+    have hIff : Integrable ff (volume.restrict Ω) := by
+    {
+        dsimp [ff]
+        exact hIf.sub hIg
+    }
+
+    change ∫ (x : ℝ) in Ω, (ff x) + (h x) = (∫ (x : ℝ) in Ω, (f x)) - (∫ (x : ℝ) in Ω, (g x)) + ∫ (x : ℝ) in Ω, (h x)
+
+    rw [(integral_add hIff hIh)]
+
+    unfold ff
+    rw [(integral_sub hIf hIg)]
+}
+
 lemma integral_distributes_over_addition
     (I B : ℝ → ℝ)
-    (w h : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h)
+    (w h_ : ℝ)
+    (Ω : Set ℝ := Set.Ioo w h_)
     (hM: MeasurableSet Ω)
     (hI : DifferentiableOn ℝ I Ω)
     (hB : DifferentiableOn ℝ B Ω)
     (ρ : ℝ)
     (hΩ_open : IsOpen Ω)
+    --(hΩ_bounded : Bounded Ω)
 :
-    ∫ (x : ℝ) in Ω, deriv I x ^ 2 - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
+    ∫ (x : ℝ) in Ω, deriv I x ^ 2 - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + ∫ (x : ℝ) in Ω, (deriv I x) ^ 2
 := by
 {
     let f := λ x ↦ deriv I x ^ 2
     let g := λ x ↦ ρ * (deriv I x * deriv B x) * 2
     let h := λ x ↦ (ρ * deriv B x) ^ 2
-    change ∫ (x : ℝ) in Ω, f x - (g x) + ((ρ * deriv B x) ^ 2) = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
+    change ∫ (x : ℝ) in Ω, f x - (g x) + ((ρ * deriv B x) ^ 2) = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
 
-    change ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
+    change ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
 
-    have dist_int_fgh
-    :
-        ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, (f x)) - (∫ (x : ℝ) in Ω, (g x)) + ∫ (x : ℝ) in Ω, (h x)
+
+    have hIf : Integrable f (volume.restrict Ω) := sorry
+    have hIg : Integrable g (volume.restrict Ω) := sorry
+    have hIh : Integrable h (volume.restrict Ω) := sorry
+
+    rw [(distribute_integral_fgh f g h w h_ Ω hIf hIg hIh)]
+
+    change ((∫ (x : ℝ) in Ω, f x) - ∫ (x : ℝ) in Ω, g x) + ∫ (x : ℝ) in Ω, h x = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
+
+    have f_eq : (∫ (x : ℝ) in Ω, (deriv I x) ^ 2) = ∫ (x : ℝ) in Ω, (f x)
     := by
     {
-
-        simp only [sub_add_eq_add_sub]
-        trace_state
-
-        sorry
-    }
-
-    rw  [dist_int_fgh]
-
-    change ((∫ (x : ℝ) in Ω, f x) - ∫ (x : ℝ) in Ω, g x) + ∫ (x : ℝ) in Ω, h x = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
-
-    have f_eq : (∫ (x : ℝ) in Ω, deriv I x) ^ 2 = ∫ (x : ℝ) in Ω, (f x)
-    := by
-    {
-
-        sorry
+        rfl
     }
 
     rw [f_eq]
@@ -705,7 +685,22 @@ lemma integral_distributes_over_addition
     have h_eq : (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 = ∫ (x : ℝ) in Ω, (h x)
     := by
     {
-        sorry
+        let h := λ x ↦ (ρ * deriv B x) ^ 2
+
+        change (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 = ∫ (x : ℝ) in Ω, (h x)
+
+        unfold h
+
+        have h_unfold : (λ x ↦ (h x)) = λ x ↦ ((ρ ^ 2) * (deriv B x) ^ 2) := by
+        {
+            unfold h
+            ext x
+            rw [mul_pow]
+        }
+
+        rw [h_unfold]
+        rw [mul_comm]
+        rw [integral_const_mul]
     }
 
     rw [h_eq]
@@ -752,6 +747,7 @@ theorem edginess_polynomial_eq
     ring_nf
     simp_all only [smul_eq_mul, Int.reduceNeg, neg_smul, zsmul_eq_mul, Int.cast_ofNat, mul_neg]
 
+    /-
     have ρB_squared : (λ x ↦ (ρ * deriv B x ) )^ 2 = λ x ↦ ρ ^ 2 * (deriv B x) ^ 2 := by
     {
         funext x
@@ -759,9 +755,10 @@ theorem edginess_polynomial_eq
         simp_all only [Pi.pow_apply]
         simp only [mul_pow]
     }
+    -/
 
     have rest_lemma :
-        ∫ (x : ℝ) in Ω, deriv I x ^ 2 - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, deriv I x) ^ 2
+        ∫ (x : ℝ) in Ω, (deriv I x ^ 2) - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
     := by
     {
         rw [ (integral_distributes_over_addition I B w h Ω hM hI hB ρ hΩ_open) ]
@@ -826,9 +823,8 @@ theorem minimized_edginess
 
 
 
-theorem minimise_edginess
+theorem edginess_minimisation_theorem
     (I B : ℝ → ℝ)
-    --(Ω : Set ℝ)
     (w h : ℝ)
     (Ω : Set ℝ := Set.Ioo w h)
     (hM: MeasurableSet Ω)
