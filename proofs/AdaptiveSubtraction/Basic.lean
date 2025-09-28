@@ -665,7 +665,6 @@ lemma integral_distributes_over_addition
 
     change ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
 
-
     have hIf : Integrable f (volume.restrict Ω) := sorry
     have hIg : Integrable g (volume.restrict Ω) := sorry
     have hIh : Integrable h (volume.restrict Ω) := sorry
@@ -708,7 +707,20 @@ lemma integral_distributes_over_addition
     have g_eq : -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) = -∫ (x : ℝ) in Ω, (g x)
     := by
     {
-        sorry
+        let g := λ x ↦ ρ * (deriv I x * deriv B x) * 2
+
+        change -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) = -∫ (x : ℝ) in Ω, (g x)
+
+        have g_unfold : (λ x ↦ (g x)) = λ x ↦ 2 * ρ * (deriv I x * deriv B x) := by
+        {
+            unfold g
+            ext x
+            ring
+        }
+
+        rw [g_unfold]
+        rw [integral_const_mul]
+        ring
     }
 
     rw [g_eq]
