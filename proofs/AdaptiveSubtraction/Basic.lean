@@ -644,16 +644,23 @@ lemma distribute_integral_fgh
     rw [(integral_sub hIf hIg)]
 }
 
+def image_and_background_are_edgable
+    (I B : ℝ → ℝ)
+    (w l : ℝ)
+    (Ω : Set ℝ := Set.Ioo w l)
+:=
+    let f := λ x ↦ deriv I x ^ 2
+    let g := λ x ↦ (deriv I x * deriv B x)
+    let h := λ x ↦ (deriv B x) ^ 2
+    Integrable f (volume.restrict Ω) ∧ Integrable g (volume.restrict Ω) ∧ Integrable h (volume.restrict Ω)
+
+
 lemma integral_distributes_over_addition
     (I B : ℝ → ℝ)
-    (w h_ : ℝ)
-    (Ω : Set ℝ := Set.Ioo w h_)
-    (hM: MeasurableSet Ω)
-    (hI : DifferentiableOn ℝ I Ω)
-    (hB : DifferentiableOn ℝ B Ω)
+    (w l : ℝ)
+    (Ω : Set ℝ := Set.Ioo w l)
     (ρ : ℝ)
-    (hΩ_open : IsOpen Ω)
-    --(hΩ_bounded : Bounded Ω)
+    (h_edgable : (image_and_background_are_edgable I B w l Ω ) )
 :
     ∫ (x : ℝ) in Ω, deriv I x ^ 2 - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + ∫ (x : ℝ) in Ω, (deriv I x) ^ 2
 := by
@@ -665,13 +672,43 @@ lemma integral_distributes_over_addition
 
     change ∫ (x : ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
 
-    have hIf : Integrable f (volume.restrict Ω) := sorry
-    have hIg : Integrable g (volume.restrict Ω) := sorry
-    have hIh : Integrable h (volume.restrict Ω) := sorry
+    rcases h_edgable with ⟨hIf, hIg, hIh⟩
 
-    rw [(distribute_integral_fgh f g h w h_ Ω hIf hIg hIh)]
+    have hIg_scaled: Integrable g (volume.restrict Ω) := by
+    {
+        unfold g
+        let fx := λ x ↦ (deriv I x * deriv B x)
+        let Ρ : ℝ := 2 * ρ
+        change Integrable (λ x ↦ ρ * (fx x) * 2 ) (volume.restrict Ω)
+        have h_factor : (λ x ↦ ρ * (fx x) * 2) = λ x ↦ Ρ * (fx x) := by
+        {
+            funext x
+            dsimp [Ρ]
+            ring
+        }
+        rw [h_factor]
+        apply Integrable.const_mul
+        unfold fx
+        apply hIg
+    }
+    have hIh_scaled : Integrable h (volume.restrict Ω) := by
+    {
+        unfold h
+        let fx := λ x ↦ (deriv I x * deriv B x)
+        let Ρ : ℝ := ρ ^ 2
+        change Integrable (fun x ↦ (ρ * deriv B x) ^ 2) (volume.restrict Ω)
+        have h_factor : (λ x ↦ (ρ * deriv B x) ^ 2) = λ x ↦ (ρ ^2) * (deriv B x) ^ 2 := by
+        {
+            funext x
+            dsimp [Ρ]
+            ring
+        }
+        rw [h_factor]
+        apply Integrable.const_mul
+        apply hIh
+    }
 
-    change ((∫ (x : ℝ) in Ω, f x) - ∫ (x : ℝ) in Ω, g x) + ∫ (x : ℝ) in Ω, h x = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
+    rw [(distribute_integral_fgh f g h w l Ω hIf hIg_scaled hIh_scaled)]
 
     have f_eq : (∫ (x : ℝ) in Ω, (deriv I x) ^ 2) = ∫ (x : ℝ) in Ω, (f x)
     := by
@@ -742,6 +779,7 @@ theorem edginess_polynomial_eq
     (hI : DifferentiableOn ℝ I Ω)
     (hB : DifferentiableOn ℝ B Ω)
     (hΩ_open : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B w h Ω ) )
 :
     ∀ ρ : ℝ, edginess I B Ω ρ = edginess_polynomial I B Ω ρ
 := by
@@ -759,21 +797,11 @@ theorem edginess_polynomial_eq
     ring_nf
     simp_all only [smul_eq_mul, Int.reduceNeg, neg_smul, zsmul_eq_mul, Int.cast_ofNat, mul_neg]
 
-    /-
-    have ρB_squared : (λ x ↦ (ρ * deriv B x ) )^ 2 = λ x ↦ ρ ^ 2 * (deriv B x) ^ 2 := by
-    {
-        funext x
-        ring_nf
-        simp_all only [Pi.pow_apply]
-        simp only [mul_pow]
-    }
-    -/
-
     have rest_lemma :
         ∫ (x : ℝ) in Ω, (deriv I x ^ 2) - ρ * (deriv I x * deriv B x) * 2 + (ρ * deriv B x) ^ 2 = (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) + (∫ (x : ℝ) in Ω, (deriv I x) ^ 2)
     := by
     {
-        rw [ (integral_distributes_over_addition I B w h Ω hM hI hB ρ hΩ_open) ]
+        rw [ (integral_distributes_over_addition I B w h Ω ρ h_edgable) ]
     }
 
     apply rest_lemma
@@ -788,12 +816,13 @@ theorem edginess_is_quadratic
     (hI : DifferentiableOn ℝ I Ω)
     (hB : DifferentiableOn ℝ B Ω)
     (hΩ_open : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B w h Ω ) )
 :
     ∀ (ρ : ℝ), edginess I B Ω ρ = (quadratic (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ρ)
 := by
 {
     intro ρ
-    rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ_open)]
+    rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ_open h_edgable)]
     unfold edginess_polynomial
     rfl
 }
@@ -822,11 +851,12 @@ theorem minimized_edginess
     (hI : DifferentiableOn ℝ I Ω)
     (hB : DifferentiableOn ℝ B Ω)
     (hΩ : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B w h Ω ) )
 :
     edginess I B Ω (ρ_opt_1d I B Ω) = quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω)
 := by
 {
-    rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ )]
+    rw [(edginess_polynomial_eq I B w h Ω hM hI hB hΩ h_edgable)]
     unfold edginess_polynomial
     unfold quadratic_minimum
     rw [(rho_opt_eq_minimizer_point I B Ω hB_nonzero)]
@@ -844,6 +874,7 @@ theorem edginess_minimisation_theorem
     (hI : DifferentiableOn ℝ I Ω)
     (hB : DifferentiableOn ℝ B Ω)
     (hΩ : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B w h Ω ) )
 :
     ∀ (ρ : ℝ), edginess I B Ω (ρ_opt_1d I B Ω) ≤ edginess I B Ω ρ := by
 {
@@ -856,11 +887,11 @@ theorem edginess_minimisation_theorem
 
     have h_lhs_eq_min : lhs = quadratic_minimum (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) := by
     {
-        apply (minimized_edginess I B w h Ω hM hB_nonzero hI hB hΩ)
+        apply (minimized_edginess I B w h Ω hM hB_nonzero hI hB hΩ h_edgable)
     }
 
     intro ρ
-    rw [(edginess_is_quadratic I B w h Ω hM hI hB hΩ)]
+    rw [(edginess_is_quadratic I B w h Ω hM hI hB hΩ h_edgable)]
     rw [h_lhs_eq_min]
     apply quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos
 }
