@@ -759,3 +759,489 @@ theorem edginess_minimisation_theorem
     rw [h_lhs_eq_min]
     apply quadratic_minimizer (a_coef B Ω) (b_coef I B Ω) (c_coef I Ω) ha_pos
 }
+
+---------------------------------------------------------------------------
+
+def Ioo_nd (n : ℕ ) (w l : Fin n → ℝ) : Set (Fin n → ℝ) :=
+    {x | ∀ i, w i < x i ∧ x i < l i}
+
+
+def image_and_background_are_edgable_ND
+    {n : ℕ}
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+: Prop :=
+    let f := λ x ↦ ‖fderiv ℝ I x‖^2
+    let g := λ x ↦ ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
+    let h := λ x ↦ ‖fderiv ℝ B x‖^2
+    Integrable f (volume.restrict Ω) ∧ Integrable g (volume.restrict Ω) ∧ Integrable h (volume.restrict Ω)
+
+
+noncomputable def edginess_ND {n}
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (ρ : ℝ) : ℝ :=
+  ∫ x in Ω, ‖fderiv ℝ (λ x => I x - ρ • B x) x‖^2
+
+
+noncomputable def ρ_opt_nd {n : ℕ}
+  (I B : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+: ℝ :=
+  ∫ x in Ω, (∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) / (∫ x in Ω, ‖fderiv ℝ B x‖^2)
+
+
+noncomputable def c_coef_nd {n : ℕ}
+  (I : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper)) : ℝ
+    := (∫ x in Ω, (‖fderiv ℝ I x‖) ^ 2)
+
+
+noncomputable def b_coef_nd {n : ℕ}
+  (I B : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper)) : ℝ
+    := - 2 • ∫ x in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
+
+noncomputable def a_coef_nd {n : ℕ}
+  ( B : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper)) : ℝ
+    := ∫ x in Ω, ‖fderiv ℝ B x‖ ^ 2
+
+
+noncomputable def edginess_polynomial_ND {n : ℕ }
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (ρ : ℝ)
+: ℝ :=
+    (quadratic (a_coef_nd B lower upper Ω ) (b_coef_nd I B lower upper Ω ) (c_coef_nd I lower upper Ω) ρ )
+
+
+lemma f_differentiable_within_nd {n : ℕ }
+  (I : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+  (hI : DifferentiableOn ℝ I Ω)
+  (x :  Fin n → ℝ)
+  (hx : x ∈ Ω)
+  : DifferentiableWithinAt ℝ (λ x ↦ I x) Ω x := hI x hx
+
+
+lemma scalar_mul_differentiable_within_nd {n : ℕ }
+  (B : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+  (ρ : ℝ)
+  (x : Fin n → ℝ)
+  (hB : DifferentiableOn ℝ B Ω)
+  (hx : x ∈ Ω)
+: DifferentiableWithinAt ℝ (λ x ↦ ρ • B x) Ω x  := DifferentiableWithinAt.const_smul (hB x hx) ρ
+
+
+
+lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (hM: MeasurableSet Ω)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (ρ : ℝ)
+    (hΩ_open : IsOpen Ω)
+:
+    ∫ x in Ω, ‖fderiv ℝ (λ x ↦ I x - ρ • B x) x‖^2 =
+    ∫ x in Ω, ‖(λ x ↦ fderiv ℝ I x - ρ • fderiv ℝ B x) x‖^2
+:= by
+{
+    let f := I
+    let g := λ x ↦ ρ • B x
+    let gg := λ x ↦ ρ • (fderiv ℝ B x)
+
+    apply integral_congr_ae
+
+    have h_diff : DifferentiableOn ℝ (λ x ↦ I x - ρ • B x) Ω :=
+      hI.sub (hB.const_smul ρ)
+
+    have h_deriv_eq
+    :
+        ∀ᵐ x ∂(volume.restrict Ω),
+        fderiv ℝ (λ x ↦ I x - ρ • B x) x = fderiv ℝ I x - ρ • fderiv ℝ B x
+    := by
+    {
+        filter_upwards [self_mem_ae_restrict hM] with a hΩ
+
+        have hn : Ω ∈ 𝓝 a := hΩ_open.mem_nhds hΩ
+        have hf : DifferentiableWithinAt ℝ f Ω a := f_differentiable_within_nd I lower upper Ω hI a hΩ
+        have hg : DifferentiableWithinAt ℝ g Ω a := scalar_mul_differentiable_within_nd B lower upper Ω ρ a hB hΩ
+        have hf' : DifferentiableAt ℝ f a := hf.differentiableAt hn
+        have hg' : DifferentiableAt ℝ g a := hg.differentiableAt hn
+        have hB' : DifferentiableAt ℝ B a := (hB a hΩ).differentiableAt hn
+
+        change fderiv ℝ (λ x => f x - g x) a = (λ x ↦ (fderiv ℝ f x ) - ρ • (fderiv ℝ B x) ) a
+
+        change fderiv ℝ (λ x => f x - g x) a = (λ x ↦ (fderiv ℝ f x ) - (gg x) ) a
+
+        have ρBh : (fderiv ℝ g a) = gg a := by
+        {
+            unfold gg
+            unfold g
+            simp_all only [smul_eq_mul, deriv_const_mul_field', f, g]
+        }
+        simp only [←ρBh]
+
+        change fderiv ℝ (f - g ) a = (fderiv ℝ f a) - (fderiv ℝ g a)
+
+        rw [fderiv_sub]
+
+        apply hf'
+        apply hg'
+    }
+
+    filter_upwards [h_deriv_eq] with x hx
+    simp only [hx]
+}
+
+
+
+lemma expand_squared_term_nd {n : ℕ }
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (hM: MeasurableSet Ω)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (ρ : ℝ)
+    (hΩ_open : IsOpen Ω)
+:
+    ∫ x in Ω, ‖fderiv ℝ I x - ρ • fderiv ℝ B x‖^2 =
+    ∫ x in Ω, ‖fderiv ℝ I x‖^2 - 2 • ρ • (∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) + (ρ^2) • ‖fderiv ℝ B x‖^2
+:= by
+{
+    let f := I
+    let g := λ x ↦ ρ • B x
+    let gg := λ x ↦ ρ • (fderiv ℝ B x)
+
+    apply integral_congr_ae
+
+    have h_diff : DifferentiableOn ℝ (λ x ↦ I x - ρ • B x) Ω :=
+      hI.sub (hB.const_smul ρ)
+
+    have h_deriv_eq
+    :
+        ∀ᵐ x ∂(volume.restrict Ω),
+        fderiv ℝ (λ x ↦ I x - ρ • B x) x = fderiv ℝ I x - ρ • fderiv ℝ B x
+    := by
+    {
+        filter_upwards [self_mem_ae_restrict hM] with a hΩ
+
+        have hn : Ω ∈ 𝓝 a := hΩ_open.mem_nhds hΩ
+        have hf : DifferentiableWithinAt ℝ f Ω a := f_differentiable_within_nd I lower upper Ω hI a hΩ
+        have hg : DifferentiableWithinAt ℝ g Ω a := scalar_mul_differentiable_within_nd B lower upper Ω ρ a hB hΩ
+        have hf' : DifferentiableAt ℝ f a := hf.differentiableAt hn
+        have hg' : DifferentiableAt ℝ g a := hg.differentiableAt hn
+        have hB' : DifferentiableAt ℝ B a := (hB a hΩ).differentiableAt hn
+
+        change fderiv ℝ (λ x => f x - g x) a = (λ x ↦ (fderiv ℝ f x ) - ρ • (fderiv ℝ B x) ) a
+
+        change fderiv ℝ (λ x => f x - g x) a = (λ x ↦ (fderiv ℝ f x ) - (gg x) ) a
+
+        have ρBh : (fderiv ℝ g a) = gg a := by
+        {
+            unfold gg
+            unfold g
+            simp_all only [smul_eq_mul, deriv_const_mul_field', f, g]
+        }
+        simp only [←ρBh]
+
+        change fderiv ℝ (f - g ) a = (fderiv ℝ f a) - (fderiv ℝ g a)
+
+        rw [fderiv_sub]
+
+        apply hf'
+        apply hg'
+    }
+
+    filter_upwards [h_deriv_eq] with x hx
+    ring_nf
+    simp only [smul_eq_mul]
+    ring
+}
+
+
+
+lemma integral_distributes_over_addition_nd {n : ℕ }
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (ρ : ℝ)
+    (h_edgable : (image_and_background_are_edgable_ND I B lower upper Ω ) )
+:
+    ∫ x in Ω, ‖fderiv ℝ I x‖^2 - 2 • ρ • ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1) + (ρ • ‖fderiv ℝ B x‖)^2 =
+    (∫ x in Ω, ‖fderiv ℝ B x‖^2) * ρ^2
+    - ρ * (2 * ∫ x in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1))
+    + ∫ x in Ω, ‖fderiv ℝ I x‖^2
+:= by
+{
+    let f := λ x ↦ ‖fderiv ℝ I x‖ ^ 2
+    let g := λ x ↦ 2 • ρ • (∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1))
+    let h := λ x ↦ (ρ * ‖fderiv ℝ B x‖) ^ 2
+
+    --change ∫ (x : Fin n → ℝ) in Ω, (f x) - 2 • ρ • ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1) + (ρ • ‖fderiv ℝ B x‖) ^ 2 = (∫ (x : Fin n → ℝ) in Ω, ‖fderiv ℝ B x‖ ^ 2) * ρ ^ 2 - ρ * (2 * ∫ (x : Fin n → ℝ) in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) + ∫ (x : Fin n → ℝ) in Ω, ‖fderiv ℝ I x‖ ^ 2
+
+    --change ∫ (x : Fin n → ℝ) in Ω, (f x) - 2 • ρ • ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1) + (h x) = (∫ (x : Fin n → ℝ) in Ω, ‖fderiv ℝ B x‖ ^ 2) * ρ ^ 2 - ρ * (2 * ∫ (x : Fin n → ℝ) in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) + ∫ (x : Fin n → ℝ) in Ω, ‖fderiv ℝ I x‖ ^ 2
+
+    change ∫ (x : Fin n → ℝ) in Ω, (f x) - (g x) + (h x) = (∫ (x : Fin n → ℝ) in Ω, ‖fderiv ℝ B x‖ ^ 2) * ρ ^ 2 - ρ * (2 * ∫ (x : Fin n → ℝ) in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) + ∫ (x : Fin n → ℝ) in Ω, ‖fderiv ℝ I x‖ ^ 2
+
+    rcases h_edgable with ⟨hIf, hIg, hIh⟩
+
+    have hIg_scaled : Integrable g (volume.restrict Ω) := by
+    {
+      unfold g
+      let fx := λ x ↦ ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
+      let Ρ : ℝ := 2 • ρ
+      change Integrable (λ x ↦ Ρ * fx x) (volume.restrict Ω)
+      have h_factor : (λ x ↦ 2 • ρ • fx x) = λ x ↦ Ρ * fx x := by
+      {
+        funext x
+        dsimp [Ρ]
+        ring
+      }
+      rw [h_factor]
+      apply Integrable.const_mul
+      unfold fx
+      exact hIg
+    }
+
+/-
+    have hIg_scaled: Integrable g (volume.restrict Ω) := by
+    {
+        unfold g
+        let fx := λ x ↦ (∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1))
+        let Ρ : ℝ := 2 * ρ
+        change Integrable (λ x ↦ ρ * (fx x) * 2 ) (volume.restrict Ω)
+        have h_factor : (λ x ↦ ρ * (fx x) * 2) = λ x ↦ Ρ * (fx x) := by
+        {
+            funext x
+            dsimp [Ρ]
+            ring
+        }
+        rw [h_factor]
+        apply Integrable.const_mul
+        unfold fx
+        apply hIg
+    } -/
+    have hIh_scaled : Integrable h (volume.restrict Ω) := by
+    {
+        unfold h
+        let fx := λ x ↦ (deriv I x * deriv B x)
+        let Ρ : ℝ := ρ ^ 2
+        change Integrable (fun x ↦ (ρ * deriv B x) ^ 2) (volume.restrict Ω)
+        have h_factor : (λ x ↦ (ρ * deriv B x) ^ 2) = λ x ↦ (ρ ^2) * (deriv B x) ^ 2 := by
+        {
+            funext x
+            dsimp [Ρ]
+            ring
+        }
+        rw [h_factor]
+        apply Integrable.const_mul
+        apply hIh
+    }
+
+    rw [(distribute_integral_fgh f g h lower upper Ω hIf hIg_scaled hIh_scaled)]
+
+    have f_eq : (∫ (x : ℝ) in Ω, (deriv I x) ^ 2) = ∫ (x : ℝ) in Ω, (f x)
+    := by
+    {
+        rfl
+    }
+
+    rw [f_eq]
+
+    have h_eq : (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 = ∫ (x : ℝ) in Ω, (h x)
+    := by
+    {
+        let h := λ x ↦ (ρ * deriv B x) ^ 2
+
+        change (∫ (x : ℝ) in Ω, deriv B x ^ 2) * ρ ^ 2 = ∫ (x : ℝ) in Ω, (h x)
+
+        unfold h
+
+        have h_unfold : (λ x ↦ (h x)) = λ x ↦ ((ρ ^ 2) * (deriv B x) ^ 2) := by
+        {
+            unfold h
+            ext x
+            rw [mul_pow]
+        }
+
+        rw [h_unfold]
+        rw [mul_comm]
+        rw [integral_const_mul]
+    }
+
+    rw [h_eq]
+
+    have g_eq : -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) = -∫ (x : ℝ) in Ω, (g x)
+    := by
+    {
+        let g := λ x ↦ ρ * (deriv I x * deriv B x) * 2
+
+        change -(ρ * (2 * ∫ (x : ℝ) in Ω, deriv I x * deriv B x)) = -∫ (x : ℝ) in Ω, (g x)
+
+        have g_unfold : (λ x ↦ (g x)) = λ x ↦ 2 * ρ * (deriv I x * deriv B x) := by
+        {
+            unfold g
+            ext x
+            ring
+        }
+
+        rw [g_unfold]
+        rw [integral_const_mul]
+        ring
+    }
+
+    rw [g_eq]
+
+    let F := ∫ (x : ℝ) in Ω, f x
+    let G := ∫ (x : ℝ) in Ω, g x
+    let H := ∫ (x : ℝ) in Ω, h x
+
+    change F - G + H = H - G + F
+    ring
+}
+
+theorem edginess_polynomial_eq_nd {n : ℕ}
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (hM: MeasurableSet Ω)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ_open : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable_ND I B lower upper Ω ) )
+:
+    ∀ ρ : ℝ, edginess_ND I B lower upper Ω ρ = edginess_polynomial_ND I B lower upper Ω ρ
+:= by
+{
+    unfold edginess_ND edginess_polynomial_ND
+    intro ρ
+    unfold quadratic
+    unfold a_coef_nd b_coef_nd c_coef_nd
+    ring_nf
+
+    rw [(deriv_distributes_over_sub_within_integral_nd I B lower upper Ω hM hI hB ρ hΩ_open )]
+    rw [(expand_squared_term_nd I B lower upper Ω hM hI hB ρ hΩ_open )]
+
+    ring_nf
+    simp_all only [smul_eq_mul, Int.reduceNeg, neg_smul, zsmul_eq_mul, Int.cast_ofNat, mul_neg]
+
+    -- ‖ fderiv ℝ I x ‖ ^ 2
+    -- (fderiv ℝ I x) • (fderiv ℝ I x)
+
+    have rest_lemma :
+        ∫ (x : (Fin n → ℝ)) in Ω, ( ‖fderiv ℝ I x‖ ^ 2 ) - ρ * (∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) * 2 + (ρ * ‖fderiv ℝ B x‖) ^ 2 = (∫ (x : (Fin n → ℝ)) in Ω, ‖fderiv ℝ B x‖ ^ 2) * ρ ^ 2 + -(ρ * (2 * ∫ (x : (Fin n → ℝ)) in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1))) + (∫ (x : (Fin n → ℝ)) in Ω, (‖fderiv ℝ I x‖) ^ 2)
+    := by
+    {
+        rw [ ( integral_distributes_over_addition_nd I B lower upper Ω ρ h_edgable) ]
+    }
+
+    apply rest_lemma
+}
+
+
+
+lemma rho_opt_eq_minimizer_point_ND {n : ℕ}
+  (I B : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+  (hB_nonzero : ∫ x in Ω, (‖fderiv ℝ B x‖)^2 > 0)
+:
+    ρ_opt_nd I B lower upper Ω = quadratic_minimizer_point (a_coef_nd B lower upper Ω) (b_coef_nd I B lower upper Ω)
+:= by
+{
+    unfold ρ_opt_nd quadratic_minimizer_point a_coef_nd b_coef_nd
+    field_simp [hB_nonzero]
+    ring_nf
+}
+
+
+
+theorem minimized_edginess_ND
+    {n : ℕ }
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (hM: MeasurableSet Ω)
+    (hB_nonzero : ∫ x in Ω, ‖fderiv ℝ B x‖^2 > 0)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable_ND I B lower upper Ω ) )
+:
+    edginess_ND I B lower upper Ω (ρ_opt_nd I B lower upper Ω) = quadratic_minimum (a_coef_nd B lower upper Ω) (b_coef_nd I B lower upper Ω) (c_coef_nd I lower upper Ω)
+:= by
+{
+    rw [(edginess_polynomial_eq_nd I B lower upper Ω hM hI hB hΩ h_edgable)]
+    unfold edginess_polynomial_ND
+    unfold quadratic_minimum
+    rw [(rho_opt_eq_minimizer_point_ND I B lower upper Ω hB_nonzero)]
+}
+
+
+
+theorem edginess_is_quadratic_nd {n : ℕ }
+    (I B : (Fin n → ℝ) → ℝ)
+    (lower upper : (Fin n → ℝ))
+    (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+    (hM: MeasurableSet Ω)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ_open : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable_ND I B lower upper Ω ) )
+:
+    ∀ (ρ : ℝ), edginess_ND I B lower upper Ω ρ = (quadratic (a_coef_nd B lower upper Ω) (b_coef_nd I B lower upper Ω) (c_coef_nd I lower upper Ω) ρ)
+:= by
+{
+    intro ρ
+    rw [(edginess_polynomial_eq_nd I B lower upper Ω hM hI hB hΩ_open h_edgable)]
+    unfold edginess_polynomial_ND
+    rfl
+}
+
+theorem edginess_minimisation_theorem_ND
+  {n : ℕ}
+  (I B : (Fin n → ℝ) → ℝ)
+  (lower upper : (Fin n → ℝ))
+  (Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+  (hM : MeasurableSet Ω)
+  (hB_nonzero : ∫ x in Ω, ‖fderiv ℝ B x‖^2 > 0)
+  (hI : DifferentiableOn ℝ I Ω)
+  (hB : DifferentiableOn ℝ B Ω)
+  (hΩ : IsOpen Ω)
+  (h_edgable : image_and_background_are_edgable_ND I B lower upper Ω)
+:
+    ∀ (ρ : ℝ), edginess_ND I B lower upper Ω (ρ_opt_nd I B lower upper Ω) ≤ edginess_ND I B lower upper Ω ρ
+:= by
+{
+    let lhs := edginess_ND I B lower upper Ω (ρ_opt_nd I B lower upper Ω)
+    change ∀ (ρ : ℝ), lhs ≤ edginess_ND I B lower upper Ω ρ
+
+    have ha_pos : 0 < a_coef_nd B lower upper Ω := by
+      unfold a_coef_nd
+      exact hB_nonzero
+
+    have h_lhs_eq_min : lhs = quadratic_minimum (a_coef_nd B lower upper Ω) (b_coef_nd I B lower upper Ω) (c_coef_nd I lower upper Ω) := by
+    {
+        apply (minimized_edginess_ND I B lower upper Ω hM hB_nonzero hI hB hΩ h_edgable)
+    }
+
+    intro ρ
+    rw [(edginess_is_quadratic_nd I B lower upper Ω hM hI hB hΩ h_edgable)]
+    rw [h_lhs_eq_min]
+    apply quadratic_minimizer (a_coef_nd B lower upper Ω) (b_coef_nd I B lower upper Ω) (c_coef_nd I lower upper Ω) ha_pos
+}
