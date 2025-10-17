@@ -1005,6 +1005,7 @@ lemma integral_distributes_over_addition_nd {n : ℕ }
       unfold g
       let fx := λ x ↦ ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
       let Ρ : ℝ := 2 • ρ
+
       change Integrable (λ x ↦ Ρ * fx x) (volume.restrict Ω)
       have h_factor : (λ x ↦ 2 • ρ • fx x) = λ x ↦ Ρ * fx x := by
       {
@@ -1039,10 +1040,10 @@ lemma integral_distributes_over_addition_nd {n : ℕ }
     have hIh_scaled : Integrable h (volume.restrict Ω) := by
     {
         unfold h
-        let fx := λ x ↦ (deriv I x * deriv B x)
+        let fx := λ x ↦ ( ‖fderiv ℝ I x‖ * ‖fderiv ℝ B x‖)
         let Ρ : ℝ := ρ ^ 2
-        change Integrable (fun x ↦ (ρ * deriv B x) ^ 2) (volume.restrict Ω)
-        have h_factor : (λ x ↦ (ρ * deriv B x) ^ 2) = λ x ↦ (ρ ^2) * (deriv B x) ^ 2 := by
+        change Integrable (fun x ↦ (ρ * ‖fderiv ℝ B x‖) ^ 2) (volume.restrict Ω)
+        have h_factor : (λ x ↦ (ρ * ‖fderiv ℝ B x‖) ^ 2) = λ x ↦ (ρ ^2) * (‖fderiv ℝ B x‖) ^ 2 := by
         {
             funext x
             dsimp [Ρ]
