@@ -865,8 +865,8 @@ lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
 
     apply integral_congr_ae
 
-    have h_diff : DifferentiableOn ℝ (λ x ↦ I x - ρ • B x) Ω :=
-      hI.sub (hB.const_smul ρ)
+    --have h_diff : DifferentiableOn ℝ (λ x ↦ I x - ρ • B x) Ω :=
+    --  hI.sub (hB.const_smul ρ)
 
     have h_deriv_eq
     :
@@ -891,7 +891,11 @@ lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
         {
             unfold gg
             unfold g
-            simp_all only [smul_eq_mul, deriv_const_mul_field', f, g]
+            simp_all only [smul_eq_mul, f, g]
+            rw [← fderiv_const_smul]
+            simp_all only [differentiableAt_const, DifferentiableAt.fun_mul]
+            rfl
+            simp_all only [differentiableAt_const, DifferentiableAt.fun_mul]
         }
         simp only [←ρBh]
 
@@ -907,7 +911,42 @@ lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
     simp only [hx]
 }
 
+----
 
+--(lower upper : (Fin n → ℝ))
+--(Ω : Set (Fin n → ℝ) := (Ioo_nd n lower upper))
+/-
+lemma uv_norm_squared
+    {n : ℕ }
+    (u v :  (Fin n → ℝ) →L[ℝ] ℝ)
+    (x : (Fin n → ℝ) )
+:
+    ‖u - v‖^2 = ‖u‖^2 - 2 * (∑ i, (fderiv ℝ u x) (Pi.single i 1) * (fderiv ℝ v x) (Pi.single i 1)) + ‖v‖^2
+:= by
+{
+
+
+}
+-/
+
+/-
+theorem norm_sub_sq (x y : E) : ‖x - y‖ ^ 2 = ‖x‖ ^ 2 - 2 * re ⟪x, y⟫ + ‖y‖ ^ 2 := by
+{
+
+
+    rw
+    [
+        sub_eq_add_neg,
+        @norm_add_sq 𝕜 _ _ _ _ x (-y),
+        norm_neg,
+        inner_neg_right,
+        map_neg,
+        mul_neg,
+        sub_eq_add_neg
+    ]
+}
+
+-/
 
 lemma expand_squared_term_nd {n : ℕ }
     (I B : (Fin n → ℝ) → ℝ)
@@ -929,9 +968,6 @@ lemma expand_squared_term_nd {n : ℕ }
 
     apply integral_congr_ae
 
-    have h_diff : DifferentiableOn ℝ (λ x ↦ I x - ρ • B x) Ω :=
-      hI.sub (hB.const_smul ρ)
-
     have h_deriv_eq
     :
         ∀ᵐ x ∂(volume.restrict Ω),
@@ -955,7 +991,11 @@ lemma expand_squared_term_nd {n : ℕ }
         {
             unfold gg
             unfold g
-            simp_all only [smul_eq_mul, deriv_const_mul_field', f, g]
+            simp_all only [smul_eq_mul, f, g]
+            rw [← fderiv_const_smul]
+            simp_all only [differentiableAt_const, DifferentiableAt.fun_mul]
+            rfl
+            simp_all only [differentiableAt_const, DifferentiableAt.fun_mul]
         }
         simp only [←ρBh]
 
@@ -971,7 +1011,51 @@ lemma expand_squared_term_nd {n : ℕ }
     ring_nf
     simp only [smul_eq_mul]
     ring
+    trace_state
+
+    let u := fderiv ℝ I x
+    let v := ρ • fderiv ℝ B x
+
+
+    have v_sq_h : ρ ^ 2 * ‖fderiv ℝ B x‖ ^ 2 = ‖v‖ ^ 2 := by
+    {
+        unfold v
+        rw [norm_smul]
+        simp_all only [smul_eq_mul, ae_restrict_eq, norm_eq_abs]
+        rw [mul_pow]
+        simp_all only [sq_abs]
+    }
+
+    change ‖u - v‖ ^ 2 = ‖u‖ ^ 2 - (ρ * ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) * 2 + ρ ^ 2 * ‖fderiv ℝ B x‖ ^ 2
+    rw [v_sq_h]
+
+    trace_state
+    rw [ norm_sub_sq]
+
+    --rw [inner_eq_sum_of_basis (Pi.basisFun ℝ (Fin n))]
+    trace_state
+
 }
+
+/-
+
+    have uv_expand : ‖u - v‖ ^ 2 = ‖u‖^2 - 2 * (ρ * ∑ x_1, (fderiv ℝ I x) (Pi.single x_1 1) * (fderiv ℝ B x) (Pi.single x_1 1)) + ‖v‖^2 := by
+    {
+
+    }
+    /-
+    let u := fderiv ℝ I x
+    let v := ρ • fderiv ℝ B x
+
+    have h_sq : ‖u - v‖^2 = ‖u‖^2 - 2 * ⟪u, v⟫ + ‖v‖^2 := norm_sub_sq_real_inner u v
+
+    ⟪u, v⟫ = ∑ i, u (Pi.single i 1) * v (Pi.single i 1)
+
+    ⟪fderiv ℝ I x, ρ • fderiv ℝ B x⟫ = ρ * ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
+    -/
+-/
+
+--
 
 
 
