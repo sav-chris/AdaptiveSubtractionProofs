@@ -12,8 +12,6 @@ noncomputable def ρ_opt_1d
 noncomputable def edginess (I B : ℝ → ℝ) (Ω : Set ℝ) (ρ : ℝ) : ℝ :=
   ∫ x in Ω, ((deriv (λ x => I x - ρ • B x)) x ) ^ 2
 
-
-
 lemma scalar_mul_differentiable_within
   (B : ℝ → ℝ)
   (Ω : Set ℝ)
@@ -31,7 +29,6 @@ lemma f_differentiable_within
   (x : ℝ)
   (hx : x ∈ Ω)
   : DifferentiableWithinAt ℝ (λ x ↦ I x) Ω x := hI x hx
-
 
 lemma deriv_distribute
   (I B : ℝ → ℝ)
