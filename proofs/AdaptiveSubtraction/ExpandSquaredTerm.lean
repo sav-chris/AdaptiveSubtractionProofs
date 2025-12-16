@@ -98,6 +98,36 @@ lemma grad_f_sub_g
     simp_all only [map_sub]
 }
 
+/-
+\begin{lemma}
+Let $n \in \mathbb{N}$,
+$I, B : \mathbb{R}^n \to \mathbb{R}$,
+let
+\[
+\Omega = \{x \in \mathbb{R}^n \mid w_i < x_i < \ell_i \text{ for all } i\},
+\]
+and assume that
+$I$ and $B$ are differentiable on $\Omega$,
+$\Omega$ is measurable and open,
+and $\rho \in \mathbb{R}$.
+
+Then
+\[
+\int_{\Omega} \left\| \nabla I(x) - \rho \, \nabla B(x) \right\|^2 \, dx
+=
+\int_{\Omega}
+\left(
+\|\nabla I(x)\|^2
+-
+2\rho \, \langle \nabla I(x), \nabla B(x) \rangle
++
+\rho^2 \|\nabla B(x)\|^2
+\right) dx .
+\]
+
+\end{lemma}
+
+-/
 lemma expand_squared_term_nd {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (lower upper : EuclideanSpace ℝ (Fin n))
