@@ -8,7 +8,6 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Tactic
 import Mathlib.Data.Finset.Basic
 
---import AdaptiveSubtraction.Edginess
 import AdaptiveSubtraction.Quadratics
 
 open Set Real Filter Topology
@@ -20,82 +19,75 @@ open scoped BigOperators
 
 notation "∇" => gradient
 
--- Rename Hypercube
+
 def hypercube {n : ℕ } (w l : EuclideanSpace ℝ (Fin n)) : Set (EuclideanSpace ℝ (Fin n)) :=
     {x | ∀ i, w i < x i ∧ x i < l i}
 
 
-def image_and_background_are_edgable_ND
+def image_and_background_are_edgable
     {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (lower upper :  EuclideanSpace ℝ (Fin n))
     (Ω :  Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
 : Prop :=
-    let f := λ x ↦ ‖fderiv ℝ I x‖^2
-    -- TO DO: Pi.single, use inner product
-    let g := λ x ↦ ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
-    let h := λ x ↦ ‖fderiv ℝ B x‖^2
+    let f := λ x ↦ ⟪∇ I x, ∇ I x⟫_ℝ
+    let g := λ x ↦ ⟪∇ I x, ∇ B x⟫_ℝ
+    let h := λ x ↦ ⟪∇ B x, ∇ B x⟫_ℝ
     Integrable f (volume.restrict Ω) ∧ Integrable g (volume.restrict Ω) ∧ Integrable h (volume.restrict Ω)
 
 
-noncomputable def edginess_ND {n}
+noncomputable def edginess
+    {n}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (lower upper :  EuclideanSpace ℝ (Fin n))
     (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
-    (ρ : ℝ) : ℝ :=
-  ∫ x in Ω, ‖fderiv ℝ (λ x => I x - ρ • B x) x‖^2
+    (ρ : ℝ) : ℝ
+:=
+    ∫ x in Ω, ‖∇ (λ x => I x - ρ • B x) x‖^2
 
 
-noncomputable def ρ_opt_nd {n : ℕ}
+noncomputable def ρ_opt {n : ℕ}
   (I B : EuclideanSpace ℝ (Fin n) → ℝ)
   (lower upper :  EuclideanSpace ℝ (Fin n))
   (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
 : ℝ :=
-  ∫ x in Ω, (∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)) / (∫ x in Ω, ‖fderiv ℝ B x‖^2)
+    ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ / ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ
 
 
-noncomputable def c_coef_nd {n : ℕ}
+noncomputable def c_coef {n : ℕ}
   (I : EuclideanSpace ℝ (Fin n) → ℝ)
   (lower upper :  EuclideanSpace ℝ (Fin n))
   (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper)) : ℝ
-    := (∫ x in Ω, (‖fderiv ℝ I x‖) ^ 2)
+:=
+    ∫ x in Ω, ⟪∇ I x, ∇ I x⟫_ℝ
 
 
-noncomputable def b_coef_nd {n : ℕ}
+noncomputable def b_coef {n : ℕ}
   (I B : EuclideanSpace ℝ (Fin n) → ℝ)
   (lower upper :  EuclideanSpace ℝ (Fin n))
   (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper)) : ℝ
-    := - 2 • ∫ x in Ω, ∑ i, (fderiv ℝ I x) (Pi.single i 1) * (fderiv ℝ B x) (Pi.single i 1)
+:=
+    - 2 • ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ
 
-noncomputable def a_coef_nd {n : ℕ}
+
+noncomputable def a_coef {n : ℕ}
   (B : EuclideanSpace ℝ (Fin n) → ℝ)
   (lower upper :  EuclideanSpace ℝ (Fin n))
   (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper)) : ℝ
-    := ∫ x in Ω, ‖fderiv ℝ B x‖ ^ 2
+:=
+    ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ
 
 
-noncomputable def edginess_polynomial_ND {n : ℕ }
+noncomputable def edginess_polynomial {n : ℕ }
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (lower upper :  EuclideanSpace ℝ (Fin n))
     (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
     (ρ : ℝ)
 : ℝ :=
-    (quadratic (a_coef_nd B lower upper Ω ) (b_coef_nd I B lower upper Ω ) (c_coef_nd I lower upper Ω) ρ )
-
-/-
-lemma f_differentiable_within_nd {n : ℕ }
-  (B : EuclideanSpace ℝ (Fin n) → ℝ)
-  (lower upper : EuclideanSpace ℝ (Fin n))
-  (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
-  (ρ : ℝ)
-  (x : EuclideanSpace ℝ (Fin n))
-  (hB : DifferentiableOn ℝ B Ω)
-  (hx : x ∈ Ω)
-: DifferentiableWithinAt ℝ (λ x ↦ ρ • B x) Ω x  := DifferentiableWithinAt.const_smul (hB x hx) ρ
--/
+    (quadratic (a_coef B lower upper Ω ) (b_coef I B lower upper Ω ) (c_coef I lower upper Ω) ρ )
 
 
-lemma scalar_mul_differentiable_within_nd {n : ℕ }
+lemma scalar_mul_differentiable_within {n : ℕ }
   (B : EuclideanSpace ℝ (Fin n) → ℝ)
   (lower upper : EuclideanSpace ℝ (Fin n))
   (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
@@ -156,7 +148,7 @@ lemma grad_f_sub_g
 }
 
 
-lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
+lemma deriv_distributes_over_sub_within_integral {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (lower upper : EuclideanSpace ℝ (Fin n))
     (Ω  : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
@@ -186,7 +178,7 @@ lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
 
         have hn : Ω ∈ 𝓝 a := hΩ_open.mem_nhds hΩ
         have hf : DifferentiableWithinAt ℝ f Ω a := hI a hΩ
-        have hg : DifferentiableWithinAt ℝ g Ω a := scalar_mul_differentiable_within_nd B lower upper Ω ρ a hB hΩ
+        have hg : DifferentiableWithinAt ℝ g Ω a := scalar_mul_differentiable_within B lower upper Ω ρ a hB hΩ
         have hf' : DifferentiableAt ℝ f a := hf.differentiableAt hn
         have hg' : DifferentiableAt ℝ g a := hg.differentiableAt hn
         have hB' : DifferentiableAt ℝ B a := (hB a hΩ).differentiableAt hn
@@ -226,7 +218,7 @@ lemma deriv_distributes_over_sub_within_integral_nd {n : ℕ}
 }
 
 
-lemma expand_squared_term_nd {n : ℕ}
+lemma expand_squared_term {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (lower upper : EuclideanSpace ℝ (Fin n))
     (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
@@ -237,7 +229,7 @@ lemma expand_squared_term_nd {n : ℕ}
     (hΩ_open : IsOpen Ω)
 :
     ∫ x in Ω, ‖((∇ I x) - ρ • (∇ B x ) )‖^2 =
-    ∫ x in Ω, ‖(∇ I x)‖^2 - 2 • ρ • ⟪(∇ I x ) , (∇ B x )⟫_ℝ + (ρ^2) • ‖(∇ B x)‖^2
+    ∫ x in Ω, ‖∇ I x‖^2 - 2 • ρ • ⟪∇ I x , ∇ B x⟫_ℝ + (ρ^2) • ‖∇ B x‖^2
 := by
 {
 
@@ -256,9 +248,8 @@ lemma expand_squared_term_nd {n : ℕ}
         filter_upwards [self_mem_ae_restrict hM] with a hΩ
 
         have hn : Ω ∈ 𝓝 a := hΩ_open.mem_nhds hΩ
-        --have hf : DifferentiableWithinAt ℝ f Ω a := f_differentiable_within_nd I lower upper Ω hI a hΩ
         have hf : DifferentiableWithinAt ℝ f Ω a := hI a hΩ
-        have hg : DifferentiableWithinAt ℝ g Ω a := scalar_mul_differentiable_within_nd B lower upper Ω ρ a hB hΩ
+        have hg : DifferentiableWithinAt ℝ g Ω a := scalar_mul_differentiable_within B lower upper Ω ρ a hB hΩ
         have hf' : DifferentiableAt ℝ f a := hf.differentiableAt hn
         have hg' : DifferentiableAt ℝ g a := hg.differentiableAt hn
         have hB' : DifferentiableAt ℝ B a := (hB a hΩ).differentiableAt hn
@@ -313,4 +304,440 @@ lemma expand_squared_term_nd {n : ℕ}
 
     rw [h_inner]
     simp only [norm_sub_sq_real, smul_eq_mul, mul_comm]
+}
+
+
+lemma distribute_integral_fgh {n : ℕ }
+    (f g h : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper :  EuclideanSpace ℝ (Fin n))
+    (Ω :  Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hIf : Integrable f (volume.restrict Ω))
+    (hIg : Integrable g (volume.restrict Ω))
+    (hIh : Integrable h (volume.restrict Ω))
+:
+    ∫ x in Ω, (f x) - (g x) + (h x) = (∫ x in Ω, (f x)) - (∫ x in Ω, (g x)) + ∫ x in Ω, (h x)
+:= by
+{
+    let ff := λ x ↦ (f x) - (g x)
+
+    have hIff : Integrable ff (volume.restrict Ω) := by
+    {
+        dsimp [ff]
+        exact hIf.sub hIg
+    }
+
+    change ∫ x in Ω, (ff x) + (h x) = (∫ x in Ω, (f x)) - (∫ x in Ω, (g x)) + ∫ x in Ω, (h x)
+
+    rw [(integral_add hIff hIh)]
+
+    unfold ff
+    rw [(integral_sub hIf hIg)]
+}
+
+
+noncomputable def I_Squared_Term
+    {n:ℕ} (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+:=
+    ⟪ ∇ I x, ∇ I x ⟫_ℝ
+
+
+noncomputable def IB_Squared_Term_Norm
+    {n:ℕ} (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+:=
+    ‖∇ I x‖ ^ 2
+
+noncomputable def B_Squared_Term_Norm
+    {n:ℕ} (B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (ρ : ℝ )
+:=
+    ρ ^ 2 * ‖∇ B x‖ ^ 2
+
+
+noncomputable def IB_Term
+    {n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (ρ : ℝ)
+:=
+    ρ * ⟪ ∇ I x, ∇ B x ⟫_ℝ * 2
+
+
+noncomputable def B_Squared_Term
+    {n : ℕ}
+    (B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (ρ : ℝ)
+:=
+    (ρ^2) * ⟪ ∇ B x, ∇ B x ⟫_ℝ
+
+
+
+noncomputable def Int_I_Squared_Term{n : ℕ}
+    (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper :  EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    ∫ x in Ω, ⟪ ∇ I x, ∇ I x ⟫_ℝ
+
+
+noncomputable def Int_IB_Squared_Term{n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper :  EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    ∫ x in Ω, ⟪ ∇ I x , ∇ B x ⟫_ℝ
+
+
+
+noncomputable def Int_IB_Term {n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (ρ : ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    (ρ * (2 * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ ))
+
+noncomputable def Int_IB_Term_2 {n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (ρ : ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    (ρ * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ) * 2
+
+noncomputable def Int_B_Squared_Term{n:ℕ}
+    (B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (ρ : ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    (∫ x in Ω, ⟪ ∇ B x, ∇ B x ⟫_ℝ) * ρ ^ 2
+
+
+noncomputable def Int_B_Squared_Term_ρ{n:ℕ}
+    (B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (ρ : ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    ρ ^ 2 * ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ
+
+noncomputable def Int_IB_inner_Term_2{n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (ρ : ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:=
+    (ρ * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ) * 2
+
+
+lemma integral_distributes_over_addition {n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (ρ : ℝ)
+    (h_edgable : (image_and_background_are_edgable I B lower upper Ω ))
+:
+    ∫ x in Ω, ( (I_Squared_Term I x) - (IB_Term I B x ρ ) + (B_Squared_Term B x ρ) ) =  (Int_B_Squared_Term B ρ lower upper Ω) - (Int_IB_Term I B ρ lower upper Ω) + (Int_I_Squared_Term I lower upper Ω)
+:= by
+{
+    let f := λ x ↦ ⟪ ∇ I x, ∇ I x ⟫_ℝ
+    let g := λ x ↦ ρ * ⟪ ∇ I x, ∇ B x ⟫_ℝ * 2
+    let h := λ x ↦ (ρ ^ 2) * ⟪ ∇ B x, ∇ B x ⟫_ℝ
+
+    unfold I_Squared_Term IB_Term B_Squared_Term Int_B_Squared_Term Int_IB_Term Int_I_Squared_Term
+
+    change ∫ x in Ω, (f x) - (g x) + (ρ ^ 2) * ⟪ ∇ B x, ∇ B x ⟫_ℝ = (∫ x in Ω, ⟪ ∇ B x, ∇ B x ⟫_ℝ) * ρ ^ 2 + -(ρ * (2 * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ)) + (∫ x in Ω, ⟪ ∇ I x, ∇ I x ⟫_ℝ)
+
+    change ∫ x in Ω, (f x) - (g x) + (h x) = (∫ x in Ω, ⟪ ∇ B x, ∇ B x ⟫_ℝ) * ρ ^ 2 + -(ρ * (2 * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ)) + (∫ x in Ω, ⟪ ∇ I x, ∇ I x ⟫_ℝ)
+
+    rcases h_edgable with ⟨hIf, hIg, hIh⟩
+
+    have hIg_scaled: Integrable g (volume.restrict Ω) := by
+    {
+        unfold g
+        let fx := λ x ↦ ⟪ ∇ I x, ∇ B x ⟫_ℝ
+        let Ρ : ℝ := 2 * ρ
+        change Integrable (λ x ↦ ρ * (fx x) * 2 ) (volume.restrict Ω)
+        have h_factor : (λ x ↦ ρ * (fx x) * 2) = λ x ↦ Ρ * (fx x) := by
+        {
+            funext x
+            dsimp [Ρ]
+            ring
+        }
+        rw [h_factor]
+        apply Integrable.const_mul
+        unfold fx
+        apply hIg
+    }
+
+    have hIh_scaled : Integrable h (volume.restrict Ω) := by
+    {
+        unfold h
+        let fx := λ x ↦ ⟪ ∇ I x, ∇ B x ⟫_ℝ
+        let Ρ : ℝ := ρ ^ 2
+        change Integrable (fun x ↦ (ρ^2) * ⟪ ∇ B x, ∇ B x ⟫_ℝ) (volume.restrict Ω)
+        apply Integrable.const_mul
+        exact hIh
+    }
+
+    rw [(distribute_integral_fgh f g h lower upper Ω hIf hIg_scaled hIh_scaled)]
+
+    have f_eq : (∫ x in Ω, ⟪ ∇ I x, ∇ I x ⟫_ℝ) = ∫ x in Ω, (f x)
+    := by
+    {
+        rfl
+    }
+
+    rw [f_eq]
+
+    have h_eq : (∫ x in Ω, ⟪ ∇ B x, ∇ B x ⟫_ℝ) * ρ ^ 2 = ∫ x in Ω, (h x)
+    := by
+    {
+        let h := λ x ↦ (ρ^2) * ⟪ ∇ B x, ∇ B x ⟫_ℝ
+
+        change (∫ x in Ω, ⟪ ∇ B x, ∇ B x ⟫_ℝ) * ρ ^ 2 = ∫ x in Ω, (h x)
+
+        unfold h
+
+        have h_unfold : (λ x ↦ (h x)) = λ x ↦ ((ρ ^ 2) * ⟪ ∇ B x, ∇ B x ⟫_ℝ) := by
+        {
+            unfold h
+            ext x
+            ring
+        }
+
+        rw [h_unfold]
+        rw [mul_comm]
+        rw [integral_const_mul]
+    }
+
+    rw [h_eq]
+
+    have g_eq : -(ρ * (2 * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ)) = -∫ x in Ω, (g x)
+    := by
+    {
+        let g := λ x ↦ ρ * (⟪ ∇ I x, ∇ B x ⟫_ℝ) * 2
+
+        change -(ρ * (2 * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ)) = -∫ x in Ω, (g x)
+
+        have g_unfold : (λ x ↦ (g x)) = λ x ↦ 2 * ρ * ⟪ ∇ I x, ∇ B x ⟫_ℝ := by
+        {
+            unfold g
+            ext x
+            ring
+        }
+
+        rw [g_unfold]
+        rw [integral_const_mul]
+        ring
+    }
+
+    rw [g_eq]
+
+    let F := ∫ x in Ω, f x
+    let G := ∫ x in Ω, g x
+    let H := ∫ x in Ω, h x
+
+    change F - G + H = H - G + F
+    ring
+}
+
+
+lemma Int_IB_Term_sub
+    {n : ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (ρ : ℝ )
+:
+    (Int_IB_Term_2 I B ρ lower upper Ω) = (Int_IB_Term I B ρ lower upper Ω)
+:= by
+{
+    unfold Int_IB_Term Int_IB_Term_2
+    ring
+}
+
+
+lemma inner_prod_norm
+    {n : ℕ }
+    (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    ‖∇ I x‖ ^ 2 = ⟪ ∇ I x, ∇ I x ⟫_ℝ
+:= by
+{
+    unfold inner
+    unfold Norm.norm
+    simpa using (real_inner_self_eq_norm_sq (∇ I x)).symm
+}
+
+lemma inner_prod_norm_2
+    {n : ℕ }
+    (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    ‖∇ I x‖ ^ 2 = (I_Squared_Term I x)
+:= by
+{
+    unfold I_Squared_Term
+    unfold inner
+    unfold Norm.norm
+    simpa using (real_inner_self_eq_norm_sq (∇ I x)).symm
+}
+
+
+noncomputable def IB_Inner
+    {n : ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+:=
+    ⟪ ∇ I x, ∇ B x ⟫_ℝ
+
+
+lemma inner_prod_eq_norm
+    {n : ℕ }
+    (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n) )
+:
+    (I_Squared_Term I x) = (IB_Squared_Term_Norm I x)
+:= by
+{
+    unfold I_Squared_Term IB_Squared_Term_Norm
+    exact real_inner_self_eq_norm_sq (∇ I x)
+}
+
+lemma inner_prod_eq_norm_lemma
+    {n: ℕ }
+    (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n) )
+:
+    (IB_Inner I I x) = (IB_Squared_Term_Norm I x)
+:= by
+{
+    unfold IB_Squared_Term_Norm IB_Inner
+    exact real_inner_self_eq_norm_sq (∇ I x)
+}
+
+
+lemma inner_prod_eq_norm_lemma_2
+    {n: ℕ }
+    (I : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n) )
+:
+    (I_Squared_Term I x) = (IB_Squared_Term_Norm I x)
+:= by
+{
+    unfold I_Squared_Term IB_Squared_Term_Norm
+    exact real_inner_self_eq_norm_sq (∇ I x)
+}
+
+
+lemma B_inner_prod_eq_norm_lemma
+    {n: ℕ }
+    (B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n) )
+    (ρ : ℝ)
+:
+    (B_Squared_Term_Norm B x ρ ) = (B_Squared_Term B x ρ)
+:= by
+{
+    unfold B_Squared_Term_Norm B_Squared_Term
+    ring_nf
+
+    rw [mul_eq_mul_left_iff]
+    left
+    simp [real_inner_self_eq_norm_sq]
+}
+
+lemma swap_terms
+    {n: ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (ρ : ℝ)
+:
+    -Int_IB_inner_Term_2 I B ρ lower upper Ω + Int_B_Squared_Term_ρ B ρ lower upper Ω  = Int_B_Squared_Term_ρ B ρ lower upper Ω - Int_IB_inner_Term_2 I B ρ lower upper Ω
+:= by
+{
+    simp only [add_comm, sub_eq_add_neg]
+}
+
+lemma swap_terms_2
+    {n: ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (ρ : ℝ)
+:
+    Int_IB_inner_Term_2 I B ρ lower upper Ω = (Int_IB_Term I B ρ lower upper Ω)
+:= by
+{
+    unfold Int_IB_inner_Term_2 Int_IB_Term
+    ring
+}
+
+lemma swap_terms_3
+    {n: ℕ }
+    (B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (ρ : ℝ)
+:
+    Int_B_Squared_Term_ρ B ρ lower upper Ω = Int_B_Squared_Term B ρ lower upper Ω
+:= by
+{
+    unfold Int_B_Squared_Term_ρ Int_B_Squared_Term
+    ring
+}
+
+
+theorem edginess_polynomial_eq
+    {n : ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hM: MeasurableSet Ω)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ_open : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B lower upper Ω ) )
+:
+    ∀ ρ : ℝ, edginess I B lower upper Ω ρ = edginess_polynomial I B lower upper Ω ρ
+:= by
+{
+    unfold edginess edginess_polynomial
+    intro ρ
+    unfold quadratic
+    unfold a_coef b_coef c_coef
+    ring_nf
+
+    rw [(deriv_distributes_over_sub_within_integral I B lower upper Ω hM hI hB ρ hΩ_open )]
+    rw [(expand_squared_term I B lower upper Ω hM hI hB ρ hΩ_open )]
+
+    ring_nf
+    simp_all only [smul_eq_mul ]
+
+    change ∫ x in Ω, ‖∇ I x‖ ^ 2 - ρ * ⟪∇ I x, ∇ B x⟫_ℝ * 2 + ρ ^ 2 * ‖∇ B x‖ ^ 2 = (-((ρ * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ) * 2) + ρ ^ 2 * ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ) + ∫ x in Ω, ⟪∇ I x, ∇ I x⟫_ℝ
+
+    change ∫ x in Ω, (IB_Squared_Term_Norm I x) - (IB_Term I B x ρ ) + (B_Squared_Term_Norm B x ρ) = (-((Int_IB_inner_Term_2 I B ρ lower upper Ω) ) + (Int_B_Squared_Term_ρ B ρ lower upper Ω) ) + (Int_I_Squared_Term I lower upper Ω)
+
+    ring_nf
+
+    change ∫ x in Ω, ( IB_Squared_Term_Norm I x - IB_Term I B x ρ + B_Squared_Term_Norm B x ρ) = -(Int_IB_inner_Term_2 I B ρ lower upper Ω) + (Int_B_Squared_Term_ρ B ρ lower upper Ω) + (Int_I_Squared_Term I lower upper Ω)
+
+    simp only [← inner_prod_eq_norm_lemma_2]
+
+    simp only [B_inner_prod_eq_norm_lemma]
+
+    simp only [swap_terms]
+
+    simp only [swap_terms_2]
+
+    rw [(swap_terms_3 B lower upper Ω ρ )]
+
+    rw [ (integral_distributes_over_addition I B lower upper Ω ρ h_edgable) ]
 }
