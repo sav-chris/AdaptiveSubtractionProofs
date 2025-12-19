@@ -741,3 +741,137 @@ theorem edginess_polynomial_eq
 
     rw [ (integral_distributes_over_addition I B lower upper Ω ρ h_edgable) ]
 }
+
+
+
+theorem edginess_is_quadratic
+    {n : ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hM: MeasurableSet Ω)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ_open : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B lower upper Ω ) )
+:
+    ∀ (ρ : ℝ), edginess I B lower upper Ω ρ = (quadratic (a_coef B lower upper Ω) (b_coef I B lower upper Ω) (c_coef I lower upper Ω) ρ)
+:= by
+{
+    intro ρ
+    rw [(edginess_polynomial_eq I B lower upper Ω hM hI hB hΩ_open h_edgable)]
+    unfold edginess_polynomial
+    rfl
+}
+
+lemma factor_BB
+    {n : ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (BB : ℝ )
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:
+    (∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ • BB⁻¹) = BB⁻¹ • (∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ )
+:= by
+{
+    let IBB : ℝ := BB⁻¹
+    let f := λ x ↦ ⟪∇ I x, ∇ B x⟫_ℝ
+    change (∫ x in Ω, (f x) • IBB) = IBB • ((∫ x in Ω, (f x)) )
+    simp_all only [smul_eq_mul]
+    rw [integral_mul_const, mul_comm]
+}
+
+lemma rho_opt_eq_minimizer_point
+    {n : ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hB_nonzero : ∫ x in Ω, ⟪ ∇ B x, ∇ B x⟫_ℝ > 0)
+:
+    ρ_opt I B lower upper Ω = quadratic_minimizer_point (a_coef B lower upper Ω) (b_coef I B lower upper Ω)
+:= by
+{
+    unfold ρ_opt quadratic_minimizer_point a_coef b_coef
+    field_simp [hB_nonzero]
+    ring_nf
+
+    change  ((∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ)) * (∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ * (∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ)⁻¹) * 2 = (∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ) * 2
+    ring_nf
+    simp_all only [gt_iff_lt, mul_eq_mul_right_iff, OfNat.ofNat_ne_zero, or_false]
+
+    set BB := (∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ) with hBB
+
+    set IB : ℝ := ∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, ⟪∇ I x, ∇ B x⟫_ℝ with hIB
+    change (∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ) * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ * (∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ)⁻¹ = ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ
+    change BB * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ * BB⁻¹ = ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ
+
+    change BB * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ * BB⁻¹ = IB
+
+    have hBBne : BB ≠ 0 := ne_of_gt hB_nonzero
+
+    change BB * (∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ * BB⁻¹) = IB
+
+    change BB • (∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ • BB⁻¹) = IB
+    simp only [(factor_BB I B BB lower upper Ω )]
+
+    change BB • BB⁻¹ • IB = IB
+
+    simp_all only [ne_eq, smul_eq_mul, not_false_eq_true, mul_inv_cancel_left₀, BB, IB]
+}
+
+
+
+theorem minimized_edginess
+    {n: ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hM: MeasurableSet Ω)
+    (hB_nonzero : ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ > 0)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B lower upper Ω ) )
+:
+    edginess I B lower upper Ω (ρ_opt I B lower upper Ω) = quadratic_minimum (a_coef B lower upper Ω) (b_coef I B lower upper Ω) (c_coef I lower upper Ω)
+:= by
+{
+    rw [(edginess_polynomial_eq I B lower upper Ω hM hI hB hΩ h_edgable)]
+    unfold edginess_polynomial
+    unfold quadratic_minimum
+    rw [(rho_opt_eq_minimizer_point I B lower upper Ω hB_nonzero)]
+}
+
+
+
+theorem edginess_minimisation_theorem
+    {n: ℕ }
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (lower upper : EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hM: MeasurableSet Ω)
+    (hB_nonzero :  ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ > 0)
+    (hI : DifferentiableOn ℝ I Ω)
+    (hB : DifferentiableOn ℝ B Ω)
+    (hΩ : IsOpen Ω)
+    (h_edgable : (image_and_background_are_edgable I B lower upper Ω ) )
+:
+    ∀ (ρ : ℝ), edginess I B lower upper Ω (ρ_opt I B lower upper Ω) ≤ edginess I B lower upper Ω ρ := by
+{
+    let lhs := edginess I B lower upper Ω (ρ_opt I B lower upper Ω)
+    change ∀ (ρ : ℝ), lhs ≤ edginess I B lower upper Ω ρ
+
+    have ha_pos : 0 < a_coef B lower upper Ω := by
+      unfold a_coef
+      exact hB_nonzero
+
+    have h_lhs_eq_min : lhs = quadratic_minimum (a_coef B lower upper Ω) (b_coef I B lower upper Ω) (c_coef I lower upper Ω) := by
+    {
+        apply (minimized_edginess I B lower upper Ω hM hB_nonzero hI hB hΩ h_edgable)
+    }
+
+    intro ρ
+    rw [(edginess_is_quadratic I B lower upper Ω hM hI hB hΩ h_edgable)]
+    rw [h_lhs_eq_min]
+    apply quadratic_minimizer (a_coef B lower upper Ω) (b_coef I B lower upper Ω) (c_coef I lower upper Ω) ha_pos
+}
