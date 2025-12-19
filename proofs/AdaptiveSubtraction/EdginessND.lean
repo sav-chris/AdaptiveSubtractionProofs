@@ -383,14 +383,6 @@ noncomputable def Int_I_Squared_Term{n : ℕ}
     ∫ x in Ω, ⟪ ∇ I x, ∇ I x ⟫_ℝ
 
 
-noncomputable def Int_IB_Squared_Term{n : ℕ}
-    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
-    (lower upper :  EuclideanSpace ℝ (Fin n))
-    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
-:=
-    ∫ x in Ω, ⟪ ∇ I x , ∇ B x ⟫_ℝ
-
-
 
 noncomputable def Int_IB_Term {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -400,13 +392,6 @@ noncomputable def Int_IB_Term {n : ℕ}
 :=
     (ρ * (2 * ∫ x in Ω, ⟪ ∇ I x, ∇ B x ⟫_ℝ ))
 
-noncomputable def Int_IB_Term_2 {n : ℕ}
-    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
-    (ρ : ℝ)
-    (lower upper : EuclideanSpace ℝ (Fin n))
-    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
-:=
-    (ρ * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ) * 2
 
 noncomputable def Int_B_Squared_Term{n:ℕ}
     (B : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -547,80 +532,12 @@ lemma integral_distributes_over_addition {n : ℕ}
 }
 
 
-lemma Int_IB_Term_sub
-    {n : ℕ }
-    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
-    (lower upper : EuclideanSpace ℝ (Fin n))
-    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
-    (ρ : ℝ )
-:
-    (Int_IB_Term_2 I B ρ lower upper Ω) = (Int_IB_Term I B ρ lower upper Ω)
-:= by
-{
-    unfold Int_IB_Term Int_IB_Term_2
-    ring
-}
-
-
-lemma inner_prod_norm
-    {n : ℕ }
-    (I : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n))
-:
-    ‖∇ I x‖ ^ 2 = ⟪ ∇ I x, ∇ I x ⟫_ℝ
-:= by
-{
-    unfold inner
-    unfold Norm.norm
-    simpa using (real_inner_self_eq_norm_sq (∇ I x)).symm
-}
-
-lemma inner_prod_norm_2
-    {n : ℕ }
-    (I : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n))
-:
-    ‖∇ I x‖ ^ 2 = (I_Squared_Term I x)
-:= by
-{
-    unfold I_Squared_Term
-    unfold inner
-    unfold Norm.norm
-    simpa using (real_inner_self_eq_norm_sq (∇ I x)).symm
-}
-
-
 noncomputable def IB_Inner
     {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
 :=
     ⟪ ∇ I x, ∇ B x ⟫_ℝ
-
-
-lemma inner_prod_eq_norm
-    {n : ℕ }
-    (I : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n) )
-:
-    (I_Squared_Term I x) = (IB_Squared_Term_Norm I x)
-:= by
-{
-    unfold I_Squared_Term IB_Squared_Term_Norm
-    exact real_inner_self_eq_norm_sq (∇ I x)
-}
-
-lemma inner_prod_eq_norm_lemma
-    {n: ℕ }
-    (I : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n) )
-:
-    (IB_Inner I I x) = (IB_Squared_Term_Norm I x)
-:= by
-{
-    unfold IB_Squared_Term_Norm IB_Inner
-    exact real_inner_self_eq_norm_sq (∇ I x)
-}
 
 
 lemma inner_prod_eq_norm_lemma_2
