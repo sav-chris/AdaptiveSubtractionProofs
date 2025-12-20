@@ -43,7 +43,36 @@ lemma quadratic_eq_vertex_form (a b c : ℝ) (ha : a ≠ 0) :
   field_simp [ha]
   ring
 
+theorem vertex_quadratic_minimizer
+    (a h k : ℝ)
+    (ha : 0 < a)
+:
+    ∀ x, quadratic_vertex a h k x ≥ quadratic_vertex a h k h
+:= by
+{
+    intro x
+    unfold quadratic_vertex
 
+    simp_all only
+    [
+        sub_self,
+        ne_eq,
+        OfNat.ofNat_ne_zero,
+        not_false_eq_true,
+        zero_pow,
+        mul_zero,
+        zero_add,
+        ge_iff_le,
+        le_add_iff_nonneg_left,
+        mul_nonneg_iff_of_pos_left
+    ]
+
+    let b : ℝ := x - h
+    change 0 ≤ b^2
+    exact sq_nonneg b
+}
+
+/-
 theorem vertex_quadratic_minimizer (a h k : ℝ) (ha : 0 < a) :
   ∀ x, quadratic_vertex a h k x ≥ quadratic_vertex a h k h := by
   intro x
@@ -52,6 +81,8 @@ theorem vertex_quadratic_minimizer (a h k : ℝ) (ha : 0 < a) :
   calc
     a * (x - h)^2 + k ≥ 0 + k := add_le_add_right h2 k
     _ = a * (h - h)^2 + k := by simp only [zero_add, sub_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero]
+-/
+
 
 noncomputable def quadratic_minimizer_point (a b : ℝ) : ℝ := -b / (2 * a)
 

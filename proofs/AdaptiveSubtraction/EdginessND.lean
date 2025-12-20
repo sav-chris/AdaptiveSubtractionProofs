@@ -24,6 +24,43 @@ def hypercube {n : ℕ } (w l : EuclideanSpace ℝ (Fin n)) : Set (EuclideanSpac
     {x | ∀ i, w i < x i ∧ x i < l i}
 
 
+/-
+\begin{definition}[Image and Background Are Edgable]
+Let $n \in \mathbb{N}$, and let
+\[
+I,\, B : \mathbb{R}^n \to \mathbb{R}
+\]
+be scalar fields on Euclidean space.
+For lower and upper bounds
+\[
+\mathrm{lower},\, \mathrm{upper} \in \mathbb{R}^n,
+\]
+let
+\[
+\Omega := \mathrm{hypercube}(\mathrm{lower},\, \mathrm{upper}) \subseteq \mathbb{R}^n .
+\]
+
+Define the functions
+\[
+f(x) := \langle \nabla I(x),\, \nabla I(x) \rangle,
+\qquad
+g(x) := \langle \nabla I(x),\, \nabla B(x) \rangle,
+\qquad
+h(x) := \langle \nabla B(x),\, \nabla B(x) \rangle .
+\]
+
+We say that the \emph{image and background are edgable} if
+\[
+\text{$f$ is integrable on $\Omega$} \;\wedge\;
+\text{$g$ is integrable on $\Omega$} \;\wedge\;
+\text{$h$ is integrable on $\Omega$},
+\]
+that is,
+\[
+f,\, g,\, h \in L^1(\Omega,\, \mathrm{d}x).
+\]
+\end{definition}
+-/
 def image_and_background_are_edgable
     {n : ℕ}
     (I B : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -92,7 +129,7 @@ lemma scalar_mul_differentiable_within {n : ℕ }
   (lower upper : EuclideanSpace ℝ (Fin n))
   (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
   (ρ : ℝ)
-  (x : Fin n → ℝ)
+  (x : EuclideanSpace ℝ (Fin n))
   (hB : DifferentiableOn ℝ B Ω)
   (hx : x ∈ Ω)
 : DifferentiableWithinAt ℝ (λ x ↦ ρ • B x) Ω x  := DifferentiableWithinAt.const_smul (hB x hx) ρ
@@ -567,8 +604,9 @@ lemma B_inner_prod_eq_norm_lemma
 
     rw [mul_eq_mul_left_iff]
     left
-    simp [real_inner_self_eq_norm_sq]
+    simp only [inner_self_eq_norm_sq_to_K, RCLike.ofReal_real_eq_id, id_eq]
 }
+
 
 lemma swap_terms
     {n: ℕ }
