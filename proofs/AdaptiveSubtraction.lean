@@ -3,4 +3,4 @@
 --import AdaptiveSubtraction.Basic
 --import AdaptiveSubtraction.Quadratics
 --import AdaptiveSubtraction.Edginess
-import AdaptiveSubtraction.EdginessND
+import AdaptiveSubtraction.Edginess
