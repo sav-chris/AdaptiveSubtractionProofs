@@ -1,20 +1,8 @@
-import Mathlib.MeasureTheory.Measure.MeasureSpace
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Data.Finset.Basic
-import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Calculus.Gradient.Basic
-import Mathlib.Data.Real.Basic
-import Mathlib.Tactic
-import Mathlib.Data.Finset.Basic
-
 import AdaptiveSubtraction.Edginess
 
-open Set Real Filter Topology
+open Set
 open MeasureTheory
 open scoped InnerProductSpace
-
-open scoped BigOperators
 
 
 def G_0 {n:ℕ}
