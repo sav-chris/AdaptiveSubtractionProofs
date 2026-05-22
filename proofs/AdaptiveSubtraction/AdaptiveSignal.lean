@@ -22,6 +22,29 @@ def G {n:ℕ}
     { p | (p - x) ∈ G_0 τ }
 
 
+noncomputable def Ψ
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
+:
+    ℝ
+:=
+    (∫ x in Ω, (f x)) / (∫ _ in Ω, 1)
+
+
+lemma G_eq_G_0
+    {n:ℕ}
+    (τ : ℝ) --radius
+:
+    (G_0 τ) = (G (0:EuclideanSpace ℝ (Fin n))  τ)
+:= by
+{
+    unfold G_0 G
+    simp only [sub_zero, setOf_mem_eq]
+    unfold G_0
+    simp only
+}
+
 noncomputable def G_abs {n:ℕ}
     (x : EuclideanSpace ℝ (Fin n)) --centre
     (τ : ℝ) --radius
@@ -91,16 +114,6 @@ noncomputable def S{n:ℕ}
     ℝ
 :=
     (μ_full I B lower upper Ω) + (1/ G_abs x τ ) • ∫ p in (G x τ), ( (I x) - (ρ I B p τ) • (B x) - (μ p I B τ) )
-
-
-noncomputable def Ψ
-    {n : ℕ }
-    (f : EuclideanSpace ℝ (Fin n) → ℝ)
-    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
-:
-    ℝ
-:=
-    (∫ x in Ω, (f x)) / (∫ _ in Ω, 1)
 
 
 lemma Ψ_linear_operator_add
@@ -206,9 +219,6 @@ noncomputable def S_Ψ_1{n : ℕ}
     )
 
 
-
-
-
 lemma G_vol_translates
     {n : ℕ }
     (τ : ℝ )
@@ -243,16 +253,332 @@ lemma G_vol_translates
     simp only [measure_preimage_add_right]
 }
 
+/-
+∀ x,  |G(x)| = |G(0)|
+-/
+lemma G_vol_translates_1
+    {n : ℕ }
+    (τ : ℝ )
+    (hτ: τ > 0 )
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    (G_abs x τ) = (G_abs (0 : EuclideanSpace ℝ (Fin n)) τ)
+:= by
+{
+    simp only [gt_iff_lt] at hτ
+    unfold G_abs
+    unfold G
 
+    simp only [sub_zero, setOf_mem_eq]
+
+    change  ∫ x in {p | p - x ∈ G_0 τ}, 1 = ∫ x in G_0 τ, 1
+    simp only [sub_eq_add_neg]
+
+    let vol : Set (EuclideanSpace ℝ (Fin n)) := (G_0 τ)
+
+    change ∫ x in {p | p + -x ∈ vol}, 1 = ∫ x in vol, 1
+
+    let a := -x
+    change ∫ x in {p | p + a ∈ vol}, 1 = ∫ x in vol, 1
+
+    simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
+
+    change volume.real ((λ p ↦ p + a) ⁻¹' vol) = volume.real vol
+
+    change (volume ((fun p ↦ p + a) ⁻¹' vol)).toReal = (volume vol).toReal
+
+    simp only [measure_preimage_add_right]
+}
+
+
+noncomputable def Ψ_vec
+    {n : ℕ}
+    (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+:
+    EuclideanSpace ℝ (Fin n)
+:=
+    (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
+
+
+
+lemma volsEqual
+    {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ )
+    (hτ : τ > 0)
+:
+    ∫ (_ : EuclideanSpace ℝ (Fin n)) in (G (n := n) x τ ), (1 : ℝ) =
+    ∫ (_ : EuclideanSpace ℝ (Fin n)) in (G_0 (n := n) τ ), (1 : ℝ)
+:= by
+{
+    simp only [gt_iff_lt] at hτ
+    unfold G
+
+    simp only [sub_eq_add_neg]
+
+    let vol : Set (EuclideanSpace ℝ (Fin n)) := (G_0 τ)
+
+    change ∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + -x ∈ vol}, 1 = ∫ (x : EuclideanSpace ℝ (Fin n)) in vol, 1
+
+    let a := -x
+
+    change ∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, 1 = ∫ (x : EuclideanSpace ℝ (Fin n)) in vol, 1
+
+    simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
+
+    change volume.real ((λ p ↦ p + a) ⁻¹' vol) = volume.real vol
+
+    change (volume ((fun p ↦ p + a) ⁻¹' vol)).toReal = (volume vol).toReal
+
+    simp only [measure_preimage_add_right]
+}
+
+
+lemma GradVolsEqual
+    {n : ℕ}
+    (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ )
+    (hτ : τ > 0)
+:
+    Ψ f (G (n := n) x τ ) = Ψ f (G_0 (n := n) τ )
+    --∇
+--    ∫ (_ : EuclideanSpace ℝ (Fin n)) in (G (n := n) x τ ), (1 : ℝ) =
+--    ∫ (_ : EuclideanSpace ℝ (Fin n)) in (G_0 (n := n) τ ), (1 : ℝ)
+:= by
+{
+    unfold Ψ
+}
+
+
+lemma volume_G0_pos
+    {n : ℕ}
+    {τ : ℝ}
+    (hτ : τ > 0)
+:
+    0 < volume.real (G_0 (n := n) τ) := by
+{
+    --simpa measure_pos_of_nonempty_interior (μ := volume)
+    --unfold G_0
+    --simp_all only [gt_iff_lt]
+
+    let S : Set (EuclideanSpace ℝ (Fin n)) := {p | ∀ i, |p i| ≤ τ / 2}
+
+    have hS_subset : S ⊆ G_0 (n := n) τ := by
+    {
+        intro p hp i
+        have hi := hp i
+        have : |(p i : ℝ)| ≤ τ / 2 := hi
+        linarith
+    }
+
+    -- step 2: show S has positive volume
+    have hS_pos : 0 < volume.real S := by
+    {
+        -- standard fact about boxes in ℝⁿ
+        -- usually proved via product measure / intervals
+        admit
+    }
+    trace_state
+    -- step 3: monotonicity of measure
+    exact lt_of_lt_of_le hS_pos (measure_mono hS_subset)
+
+}
+
+
+
+/-
+Ψ(f, Gn(x)) = Ψ(p → f (p + x), Gn(0))
+-/
+theorem Ψ_translates
+    {n : ℕ}
+    (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+    (τ : ℝ)
+    (hτ: τ > 0 )
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    Ψ f (G x τ) = Ψ (λ p ↦ f (p + x)) (G_0 τ)
+:= by
+{
+    unfold Ψ
+
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in G x τ, f x) / ∫ (x : EuclideanSpace ℝ (Fin n)) in G x τ, 1 = (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, (fun p ↦ f (p + x)) x_1) / ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, 1
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in G x τ, f x) / (G_abs x τ) = (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, (fun p ↦ f (p + x)) x_1) / ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, 1
+
+    simp only [G_abs, integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
+
+    have hG_translates : volume.real (G_0 (n := n) τ) = volume.real (G x τ) := by
+    {
+        unfold G
+        change volume.real (G_0 τ) = volume.real ((fun p ↦ p - x) ⁻¹' (G_0 τ))
+        let xr := - x
+        change volume.real (G_0 τ) = volume.real ((fun p : EuclideanSpace ℝ (Fin n) ↦ p + xr) ⁻¹' (G_0 τ))
+        simp only [Measure.real, measure_preimage_add_right]
+    }
+
+    simp only [hG_translates]
+
+    let d : ℝ := volume.real (G x τ)
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in G x τ, f x) / d = (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x_1 + x)) / d
+
+    have hd : d ≠ 0 := by
+    {
+        unfold d
+        have hpos := volume_G0_pos (n := n) hτ
+        have htrans := hG_translates.symm
+        have hpos' : 0 < volume.real (G x τ) := by simpa [htrans] using hpos
+        exact ne_of_gt hpos'
+    }
+    field_simp [hd]
+
+    simp only [gt_iff_lt] at hτ
+    unfold G
+
+    simp only [sub_eq_add_neg]
+
+    let vol : Set (EuclideanSpace ℝ (Fin n)) := (G_0 τ)
+
+    change ∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + -x ∈ vol}, f x = ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)
+
+    let a := -x
+
+    change ∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, f x = ∫ (p : EuclideanSpace ℝ (Fin n)) in vol, f (p + x)
+
+    simp_all only [ne_eq, d, vol, a]
+
+    trace_state
+
+
+
+}
+
+/-
 lemma grad_Ψ
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (Ω : Set (EuclideanSpace ℝ (Fin n)) )
-    --(x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
     (hτ : τ > 0)
+    (x : EuclideanSpace ℝ (Fin n))
 :
-    ∇ (λ x ↦ Ψ f (G x τ )) = ∇ (λ x ↦ Ψ (λ p ↦ (f (p + x) )) (G 0 τ ))
+    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
+:= by
+{
+    exact grad_Ψ_let f Ω τ hτ x
+}
+-/
+
+noncomputable def Ψ_region
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (τ : ℝ)
+    --(Ω : Set (EuclideanSpace ℝ (Fin n)))
+
+:
+    EuclideanSpace ℝ (Fin n) → ℝ
+:=
+    (λ x1 ↦ (Ψ f (G x1 τ)))
+
+
+lemma grad_Ψ_distributes
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
+    (τ : ℝ)
+    (hτ : τ > 0)
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
+:= by
+{
+    let lhs : EuclideanSpace ℝ (Fin n) → ℝ := λ x1 ↦  (Ψ f (G x1 τ))
+    change ∇ (lhs) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
+    trace_state
+
+    --have hGtrans(x1 : EuclideanSpace ℝ (Fin n)) : (Ψ f (G x1 τ)) = (Ψ f (G 0 τ)) := by
+    have hGtrans(x1 : EuclideanSpace ℝ (Fin n)) : lhs = λ x1 ↦ (Ψ f (G_0 τ)) := by
+    {
+        unfold lhs
+        trace_state
+        rw [(G_vol_translates τ hτ )]
+
+    }
+    simp only [(hGtrans x)]
+    trace_state
+
+    unfold Ψ_vec
+    --simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one, one_div]
+    --refine PiLp.ext ?_
+    unfold Ψ
+    --simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
+    --simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one, one_div]
+    --apply [(G_vol_translates τ hτ )]
+    simp only [(hGtrans x ) ]
+    trace_state
+
+}
+
+/-
+    change  (volume {p | p + a ∈ vol}).toReal = (volume vol).toReal
+    trace_state
+    -/
+--∇ (Ψ f (G x τ )) =  Ψ ∇ f (p + x) (G 0 τ )
+
+    --(x : EuclideanSpace ℝ (Fin n))
+lemma grad_Ψ
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
+    (τ : ℝ)
+    (hτ : τ > 0)
+    (x : EuclideanSpace ℝ (Fin n))
+
+:
+    ∇ (λ x ↦ Ψ f (G x τ)) x = Ψ (λ p ↦ ∇ (λ (y : EuclideanSpace ℝ (Fin n)) ↦ f y) (p + x)) (G_0 τ)
+
+    --∇ (λ y ↦ Ψ f (G y τ)) = Ψ λ x ↦ ∇ (f x) (G 0 τ)
+ --(Ψ (λ p ↦ ∇ (λ x ↦ (f (p + x)))) (G 0 τ) )
+
+    /-
+    ∇ (λ x ↦ Ψ f (G x τ )) =
+    --(
+
+            --λ x ↦
+    (Ψ
+        (λ p ↦ (∇ (λ x ↦ f (p + x) )))
+        (G 0 τ )
+    )
+    -/
+
+    --)
+    --∇ (λ x ↦ Ψ f (G x τ )) = ∇ (λ x ↦ Ψ (λ p ↦ (f (p + x) )) (G 0 τ ))
+    /-
+    ∇ (λ x ↦ Ψ f (G x τ )) =
+    (∇
+        (
+            λ x ↦
+            (Ψ
+                (λ p ↦ (f (p + x) ))
+                (G 0 τ )
+            )
+        )
+    )
+    -/
+    --∇ (λ x ↦ Ψ f (G x τ )) = (Ψ (λ p ↦ (∇ (λ x ↦ (f (p + x)) ) )) (G 0 τ ) )
+
+/-
+    (Ψ
+        (
+            λ x ↦
+            (∇
+                λ (p : EuclideanSpace ℝ (Fin n)) ↦ (f (p + x) )
+            )
+        )
+        (G 0 τ )
+    )
+    -/
 := by
 {
     unfold Ψ
@@ -267,9 +593,16 @@ lemma grad_Ψ
         mul_one
     ]
 
+    trace_state
+
     let vol(q : EuclideanSpace ℝ (Fin n)) := volume.real (G q τ)
 
-    change (∇ fun x ↦ (∫ x in G x τ, f x) / (vol x) ) = ∇ fun x ↦ (∫ p in G 0 τ, f (p + x)) / (vol 0)
+    trace_state
+
+    change (∇ λ x ↦ (∫ x in G x τ, f x) / (vol x) ) = ∇ λ x ↦ (∫ p in G 0 τ, f (p + x)) / (vol 0)
+
+    trace_state
+
 
     --change (∫ x in Ω, α * f x) / vol = α * ((∫ x in Ω, f x) / vol)
 /-
