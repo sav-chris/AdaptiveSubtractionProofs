@@ -351,8 +351,35 @@ lemma GradVolsEqual
     unfold Ψ
 }
 
+/-
+The Euclidean ball of radius `τ` is contained in the cube `G_0 τ`,
+since each coordinate of a point is bounded by its L2 norm.
+-/
+lemma ball_subset_G_0 {n : ℕ} (τ : ℝ) :
+    Metric.ball (0 : EuclideanSpace ℝ (Fin n)) τ ⊆ G_0 τ := by
+  intro p hp
+  simp [EuclideanSpace.norm_eq] at hp
+  intro i
+  have hnonneg : ∀ j ∈ (Finset.univ : Finset (Fin n)), 0 ≤ p.ofLp j ^ 2 := by
+    intro j hj
+    exact sq_nonneg (p.ofLp j)
+  have hsum : p.ofLp i ^ 2 ≤ ∑ j : Fin n, p.ofLp j ^ 2 := by
+    simpa using Finset.single_le_sum hnonneg (Finset.mem_univ i)
+  have habs : |p.ofLp i| ≤ Real.sqrt (∑ j : Fin n, p.ofLp j ^ 2) := by
+    simpa using Real.abs_le_sqrt hsum
+  linarith
 
-lemma volume_G0_pos
+/-
+The cube `G_0 τ` has positive volume.
+-/
+lemma G_0_volume_pos {n : ℕ} (τ : ℝ) (hτ : τ > 0) :
+    0 < volume (G_0 (n := n) τ) := by
+  have hpos : 0 < volume (Metric.ball (0 : EuclideanSpace ℝ (Fin n)) τ) := by
+    simpa using Metric.measure_ball_pos _ _ hτ
+  have hsubset := ball_subset_G_0 (n := n) τ
+  exact lt_of_lt_of_le hpos (MeasureTheory.measure_mono hsubset)
+
+lemma volume_G0_pos_11
     {n : ℕ}
     {τ : ℝ}
     (hτ : τ > 0)
