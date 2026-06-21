@@ -372,7 +372,8 @@ lemma G_0_volume_pos
     (τ : ℝ)
     (hτ : τ > 0)
 :
-    0 < volume (G_0 (n := n) τ) := by
+    0 < volume (G_0 (n := n) τ)
+:= by
 {
     have hpos : 0 < volume (Metric.ball (0 : EuclideanSpace ℝ (Fin n)) τ) := by
     {
@@ -383,155 +384,49 @@ lemma G_0_volume_pos
 }
 
 
-/-
-lemma GradVolsEqual
+lemma G_0_subset_closedBall
     {n : ℕ}
-    (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
-    (x : EuclideanSpace ℝ (Fin n))
-    (τ : ℝ )
-    (hτ : τ > 0)
-:
-    Ψ f (G (n := n) x τ ) = Ψ f (G_0 (n := n) τ )
-    --∇
---    ∫ (_ : EuclideanSpace ℝ (Fin n)) in (G (n := n) x τ ), (1 : ℝ) =
---    ∫ (_ : EuclideanSpace ℝ (Fin n)) in (G_0 (n := n) τ ), (1 : ℝ)
-:= by
-{
-    unfold Ψ
-}
-
--/
-/-
-lemma volume_G0_pos
-    {n : ℕ}
-    {τ : ℝ}
-    (hτ : τ > 0)
-:
-    0 < volume.real (G_0 (n := n) τ) := by
-{
-    --simpa measure_pos_of_nonempty_interior (μ := volume)
-    --unfold G_0
-    --simp_all only [gt_iff_lt]
-
-    let S : Set (EuclideanSpace ℝ (Fin n)) := {p | ∀ i, |p i| ≤ τ / 2}
-
-    have hS_subset : S ⊆ G_0 (n := n) τ := by
-    {
-        intro p hp i
-        have hi := hp i
-        have : |(p i : ℝ)| ≤ τ / 2 := hi
-        linarith
-    }
-
-    -- step 2: show S has positive volume
-    have hS_pos : 0 < volume.real S := by
-    {
-        -- standard fact about boxes in ℝⁿ
-        -- usually proved via product measure / intervals
-        admit
-    }
-    trace_state
-    -- step 3: monotonicity of measure
-    exact lt_of_lt_of_le hS_pos (measure_mono hS_subset)
-
-}
--/
-/-
-lemma G_0_eq_Icc {n : ℕ} (τ : ℝ) :
-    G_0 (n := n) τ = Set.Icc (fun _ => -τ) (fun _ => τ) := by
-  ext p
-  simp [G_0, abs_le]
--/
-
-/-
-lemma G_NonEmpty
-    {n : ℕ }
-    (τ : ℝ )
-    (hτ : τ > 0)
-:
-    0 < (volume (G_0 (n := n) τ)).toReal
-:= by
-{
-    change 0 < (volume ( (G_0 (n := n) τ : Set (EuclideanSpace ℝ (Fin n))) )).toReal
-    change 0 < (volume.real ( (G_0 (n := n) τ : Set (EuclideanSpace ℝ (Fin n))) ))
-
-    trace_state
-    unfold EuclideanSpace
-    trace_state
-    change 0 < (volume ((G_0 (n := n) τ : Set (Fin n → ℝ)))).toReal
-
-    trace_state
-
-}
--/
-
-/-
-theorem Ψ_translates_1
-    {n : ℕ}
-    (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
-    (Ω : Set (EuclideanSpace ℝ (Fin n)))
     (τ : ℝ)
-    (hτ: τ > 0 )
-    (x : EuclideanSpace ℝ (Fin n))
+    (hτ : 0 ≤ τ)
 :
-    Ψ f (G x τ) = Ψ (λ p ↦ f (p + x)) (G_0 τ)
+    G_0 (n := n) τ ⊆ Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) (τ * Real.sqrt n)
 := by
 {
-    unfold Ψ
-    simp only [gt_iff_lt] at hτ
-
-    unfold G
-
-    simp only [sub_eq_add_neg]
-
-    let vol : Set (EuclideanSpace ℝ (Fin n)) := (G_0 τ)
-    let a := -x
-
-    change  (∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, f x) / ∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, 1 =
-    (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / ∫ (x : EuclideanSpace ℝ (Fin n)) in vol, 1
-
-    simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
-
-    change  (∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, f x) / volume.real {p | p + a ∈ vol} =
-    (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / volume.real vol
-
-    change (∫ (x : EuclideanSpace ℝ (Fin n)) in (λ p ↦ p + a) ⁻¹' vol, f x) / volume.real ((λ p ↦ p + a) ⁻¹' vol) =
-      (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / volume.real vol
-
-    change (∫ (x : EuclideanSpace ℝ (Fin n)) in (λ p ↦ p + a) ⁻¹' vol, f x) / (volume ((λ p ↦ p + a) ⁻¹' vol)).toReal =
-      (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / (volume vol).toReal
-
-    simp only [measure_preimage_add_right]
-
-    let denom := (volume vol).toReal
-    change (∫ (x : EuclideanSpace ℝ (Fin n)) in (fun p ↦ p + a) ⁻¹' vol, f x) / denom =
-      (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / denom
-
-    let left := (∫ (x : EuclideanSpace ℝ (Fin n)) in (fun p ↦ p + a) ⁻¹' vol, f x)
-    let right := (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x))
-
-    change left / denom =
-      right / denom
-
-    have hdenom : denom ≠ 0 := by
-        have : 0 < denom := by
-          unfold denom vol
-          simp only [(G_NonEmpty τ hτ)]
-        exact ne_of_gt this
-
-    refine (IsUnit.div_left_inj ?_).mpr ?_
-    trace_state
-
-    simp only [isUnit_iff_ne_zero, ne_eq, hdenom, not_false_eq_true]
-
-    unfold left right
-    trace_state
-
-
-
-
+    intro p hp
+    simp only [Metric.mem_closedBall, dist_zero_right, EuclideanSpace.norm_eq, Real.norm_eq_abs]
+    have hbound : ∀ i : Fin n, |p i| ^ 2 ≤ τ ^ 2 := by
+    {
+        intro i
+        have h : |p i| ≤ τ := hp i
+        nlinarith [abs_nonneg (p i)]
+    }
+    have hsum : ∑ i : Fin n, |p i| ^ 2 ≤ ∑ i : Fin n, τ ^ 2 :=
+        Finset.sum_le_sum (fun i _ => hbound i)
+    simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
+    calc Real.sqrt (∑ i : Fin n, |p i| ^ 2)
+        ≤ Real.sqrt ((n : ℝ) * τ ^ 2) := Real.sqrt_le_sqrt hsum
+      _ = τ * Real.sqrt n := by
+      {
+        rw [Real.sqrt_mul (by positivity : (0:ℝ) ≤ (n:ℝ)), Real.sqrt_sq hτ]
+        ring
+      }
 }
--/
+
+lemma G_0_volume_lt_top
+    {n : ℕ}
+    (τ : ℝ)
+    (hτ : 0 < τ)
+:
+    volume (G_0 (n := n) τ) < ⊤
+:= by
+{
+    have hsub := G_0_subset_closedBall (n := n) τ hτ.le
+    have hcompact : IsCompact (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) (τ * Real.sqrt n)) :=
+        isCompact_closedBall 0 (τ * Real.sqrt n)
+    exact lt_of_le_of_lt (measure_mono hsub) hcompact.measure_lt_top
+}
+
+
 /-
 Ψ(f, Gn(x)) = Ψ(p → f (p + x), Gn(0))
 -/
@@ -567,13 +462,39 @@ theorem Ψ_translates
     let d : ℝ := volume.real (G x τ)
     change (∫ (x : EuclideanSpace ℝ (Fin n)) in G x τ, f x) / d = (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x_1 + x)) / d
 
+    have hpos' (hτ_1 : τ > 0 ) : (0 : ℝ ) < volume.real (G x τ) := by
+    {
+        have hGabs_eq : G_abs x τ = volume.real (G x τ) := by
+        {
+            unfold G_abs
+            simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply,
+                univ_inter, smul_eq_mul, mul_one]
+        }
+
+        have hGabs0_eq : G_abs (0 : EuclideanSpace ℝ (Fin n)) τ = volume.real (G_0 (n := n) τ) := by
+        {
+            unfold G_abs
+            rw [← G_eq_G_0]
+            simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply,
+                univ_inter, smul_eq_mul, mul_one]
+        }
+
+        have hpos0 : (0:ℝ) < volume.real (G_0 (n := n) τ) := by
+        {
+            have hpos_meas := G_0_volume_pos (n := n) τ hτ_1
+            have hlt_top := G_0_volume_lt_top (n := n) τ hτ_1
+            simp only [Measure.real]
+            exact ENNReal.toReal_pos (ne_of_gt hpos_meas) (ne_of_lt hlt_top)
+        }
+
+        rw [← hGabs_eq, G_vol_translates τ hτ_1 x, hGabs0_eq]
+        exact hpos0
+    }
+
     have hd : d ≠ 0 := by
     {
         unfold d
-        have hpos := volume_G0_pos (n := n) hτ
-        have htrans := hG_translates.symm
-        have hpos' : 0 < volume.real (G x τ) := by simpa [htrans] using hpos
-        exact ne_of_gt hpos'
+        exact ne_of_gt (hpos' hτ)
     }
     field_simp [hd]
 
@@ -592,12 +513,17 @@ theorem Ψ_translates
 
     simp_all only [ne_eq, d, vol, a]
 
-    trace_state
+    have hMP : MeasureTheory.MeasurePreserving (fun p : EuclideanSpace ℝ (Fin n) => p + a) volume volume :=
+    MeasureTheory.measurePreserving_add_right volume a
 
-    simpa using integral_preimage_add_right (f := f) (a := a) (s := vol)
+    have hME : MeasurableEmbedding (fun p : EuclideanSpace ℝ (Fin n) => p + a) :=
+        (MeasurableEquiv.addRight a).measurableEmbedding
 
-    change volume.real ((λ p ↦ p + a) ⁻¹' vol) = volume.real vol
+    have hkey := hMP.setIntegral_preimage_emb hME (fun z => f (z - a)) vol
+    simp only [add_sub_cancel_right] at hkey
 
+    simp_all only [forall_const, sub_neg_eq_add, a, vol]
+    exact hkey
 }
 
 /-
