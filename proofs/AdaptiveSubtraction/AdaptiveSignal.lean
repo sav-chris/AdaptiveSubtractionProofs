@@ -335,6 +335,55 @@ lemma volsEqual
 }
 
 
+/-
+The Euclidean ball of radius `τ` is contained in the cube `G_0 τ`,
+since each coordinate of a point is bounded by its L2 norm.
+-/
+lemma ball_subset_G_0
+    {n : ℕ}
+    (τ : ℝ)
+:
+    Metric.ball (0 : EuclideanSpace ℝ (Fin n)) τ ⊆ G_0 τ := by
+{
+    intro p hp
+    simp [EuclideanSpace.norm_eq] at hp
+    intro i
+    have hnonneg : ∀ j ∈ (Finset.univ : Finset (Fin n)), 0 ≤ p.ofLp j ^ 2 := by
+    {
+        intro j hj
+        exact sq_nonneg (p.ofLp j)
+    }
+    have hsum : p.ofLp i ^ 2 ≤ ∑ j : Fin n, p.ofLp j ^ 2 := by
+    {
+        simpa using Finset.single_le_sum hnonneg (Finset.mem_univ i)
+    }
+    have habs : |p.ofLp i| ≤ Real.sqrt (∑ j : Fin n, p.ofLp j ^ 2) := by
+    {
+        simpa using Real.abs_le_sqrt hsum
+    }
+    linarith
+}
+
+/-
+The cube `G_0 τ` has positive volume.
+-/
+lemma G_0_volume_pos
+    {n : ℕ}
+    (τ : ℝ)
+    (hτ : τ > 0)
+:
+    0 < volume (G_0 (n := n) τ) := by
+{
+    have hpos : 0 < volume (Metric.ball (0 : EuclideanSpace ℝ (Fin n)) τ) := by
+    {
+        simpa using Metric.measure_ball_pos _ _ hτ
+    }
+    have hsubset := ball_subset_G_0 (n := n) τ
+    exact lt_of_lt_of_le hpos (MeasureTheory.measure_mono hsubset)
+}
+
+
+/-
 lemma GradVolsEqual
     {n : ℕ}
     (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
@@ -351,7 +400,8 @@ lemma GradVolsEqual
     unfold Ψ
 }
 
-
+-/
+/-
 lemma volume_G0_pos
     {n : ℕ}
     {τ : ℝ}
@@ -385,9 +435,103 @@ lemma volume_G0_pos
     exact lt_of_lt_of_le hS_pos (measure_mono hS_subset)
 
 }
+-/
+/-
+lemma G_0_eq_Icc {n : ℕ} (τ : ℝ) :
+    G_0 (n := n) τ = Set.Icc (fun _ => -τ) (fun _ => τ) := by
+  ext p
+  simp [G_0, abs_le]
+-/
+
+/-
+lemma G_NonEmpty
+    {n : ℕ }
+    (τ : ℝ )
+    (hτ : τ > 0)
+:
+    0 < (volume (G_0 (n := n) τ)).toReal
+:= by
+{
+    change 0 < (volume ( (G_0 (n := n) τ : Set (EuclideanSpace ℝ (Fin n))) )).toReal
+    change 0 < (volume.real ( (G_0 (n := n) τ : Set (EuclideanSpace ℝ (Fin n))) ))
+
+    trace_state
+    unfold EuclideanSpace
+    trace_state
+    change 0 < (volume ((G_0 (n := n) τ : Set (Fin n → ℝ)))).toReal
+
+    trace_state
+
+}
+-/
+
+/-
+theorem Ψ_translates_1
+    {n : ℕ}
+    (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+    (τ : ℝ)
+    (hτ: τ > 0 )
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    Ψ f (G x τ) = Ψ (λ p ↦ f (p + x)) (G_0 τ)
+:= by
+{
+    unfold Ψ
+    simp only [gt_iff_lt] at hτ
+
+    unfold G
+
+    simp only [sub_eq_add_neg]
+
+    let vol : Set (EuclideanSpace ℝ (Fin n)) := (G_0 τ)
+    let a := -x
+
+    change  (∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, f x) / ∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, 1 =
+    (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / ∫ (x : EuclideanSpace ℝ (Fin n)) in vol, 1
+
+    simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
+
+    change  (∫ (x : EuclideanSpace ℝ (Fin n)) in {p | p + a ∈ vol}, f x) / volume.real {p | p + a ∈ vol} =
+    (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / volume.real vol
+
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in (λ p ↦ p + a) ⁻¹' vol, f x) / volume.real ((λ p ↦ p + a) ⁻¹' vol) =
+      (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / volume.real vol
+
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in (λ p ↦ p + a) ⁻¹' vol, f x) / (volume ((λ p ↦ p + a) ⁻¹' vol)).toReal =
+      (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / (volume vol).toReal
+
+    simp only [measure_preimage_add_right]
+
+    let denom := (volume vol).toReal
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in (fun p ↦ p + a) ⁻¹' vol, f x) / denom =
+      (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x)) / denom
+
+    let left := (∫ (x : EuclideanSpace ℝ (Fin n)) in (fun p ↦ p + a) ⁻¹' vol, f x)
+    let right := (∫ (x_1 : EuclideanSpace ℝ (Fin n)) in vol, f (x_1 + x))
+
+    change left / denom =
+      right / denom
+
+    have hdenom : denom ≠ 0 := by
+        have : 0 < denom := by
+          unfold denom vol
+          simp only [(G_NonEmpty τ hτ)]
+        exact ne_of_gt this
+
+    refine (IsUnit.div_left_inj ?_).mpr ?_
+    trace_state
+
+    simp only [isUnit_iff_ne_zero, ne_eq, hdenom, not_false_eq_true]
+
+    unfold left right
+    trace_state
 
 
 
+
+}
+-/
 /-
 Ψ(f, Gn(x)) = Ψ(p → f (p + x), Gn(0))
 -/
@@ -450,7 +594,9 @@ theorem Ψ_translates
 
     trace_state
 
+    simpa using integral_preimage_add_right (f := f) (a := a) (s := vol)
 
+    change volume.real ((λ p ↦ p + a) ⁻¹' vol) = volume.real vol
 
 }
 
