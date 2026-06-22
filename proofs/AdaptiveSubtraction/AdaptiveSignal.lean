@@ -1,4 +1,5 @@
 import AdaptiveSubtraction.Edginess
+import Mathlib.Analysis.Calculus.ParametricIntegral
 
 open Set
 open MeasureTheory
@@ -301,6 +302,43 @@ noncomputable def Ψ_vec
     (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
 
 
+noncomputable def Ψ_vec_1
+    {n : ℕ}
+    (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+:
+    EuclideanSpace ℝ (Fin n)
+:=
+    EuclideanSpace.equiv (Fin n) ℝ |>.symm (fun i ↦ Ψ (fun x ↦ F x i) Ω)
+
+/-
+lemma Ψ_vec_eq_Ψ_components
+    {n : ℕ}
+    (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+    (i : Fin n)
+:
+    (Ψ_vec F Ω) i = Ψ (λ x ↦ F x i) Ω
+:= by
+{
+    simp [Ψ_vec, Ψ, EuclideanSpace.smul_apply, integral_apply, div_eq_inv_mul, mul_comm]
+}
+-/
+
+
+/-
+
+noncomputable def Ψ
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
+:
+    ℝ
+:=
+    (∫ x in Ω, (f x)) / (∫ _ in Ω, 1)
+
+-/
+
 
 lemma volsEqual
     {n : ℕ}
@@ -433,7 +471,7 @@ lemma G_0_volume_lt_top
 theorem Ψ_translates
     {n : ℕ}
     (f : (EuclideanSpace ℝ (Fin n)) → ℝ )
-    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+    --(Ω : Set (EuclideanSpace ℝ (Fin n)))
     (τ : ℝ)
     (hτ: τ > 0 )
     (x : EuclideanSpace ℝ (Fin n))
@@ -526,21 +564,6 @@ theorem Ψ_translates
     exact hkey
 }
 
-/-
-lemma grad_Ψ
-    {n : ℕ }
-    (f : EuclideanSpace ℝ (Fin n) → ℝ)
-    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
-    (τ : ℝ)
-    (hτ : τ > 0)
-    (x : EuclideanSpace ℝ (Fin n))
-:
-    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
-:= by
-{
-    exact grad_Ψ_let f Ω τ hτ x
-}
--/
 
 noncomputable def Ψ_region
     {n : ℕ }
@@ -553,6 +576,67 @@ noncomputable def Ψ_region
 :=
     (λ x1 ↦ (Ψ f (G x1 τ)))
 
+
+lemma gradient_Ψ_fixed_domain
+    {n : ℕ }
+    (g : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ )
+    -- (+ integrability/differentiability hypotheses)
+:
+    ∇ ( λ x1 ↦ Ψ (λ p ↦ g p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (λ x1 ↦ g p x1) x) (G_0 τ)
+:= by
+{
+    sorry
+
+}
+
+lemma gradient_translate
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (p x : EuclideanSpace ℝ (Fin n))
+    (hf : DifferentiableAt ℝ f (p + x))
+:
+    ∇ (λ x1 ↦ f (p + x1)) x = ∇ f (p + x)
+:= by
+{
+    -- 1. Unfold the definition of gradient to expose fderiv
+    simp_rw [gradient]
+    congr 1
+
+    -- 2. Rewrite the translated function as a composition
+    have h_comp : (λ x1 ↦ f (p + x1)) = f ∘ (λ x1 ↦ p + x1) := by rfl
+    rw [h_comp]
+
+    -- 3. Apply the Fréchet chain rule
+    rw [fderiv_comp x hf (differentiableAt_id.const_add p)]
+
+    -- 4. Clean up the derivative of (p + x1) which is the identity map
+    rw [fderiv_const_add]
+    change (fderiv ℝ f (p + x)).comp (fderiv ℝ id x) = fderiv ℝ f (p + x)
+    rw [fderiv_id]
+
+    exact ContinuousLinearMap.comp_id _
+}
+
+lemma grad_Ψ_distributes_5
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (hf : Differentiable ℝ f)
+    (τ : ℝ)
+    (hτ : τ > 0)
+    (x : EuclideanSpace ℝ (Fin n))
+
+:
+    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
+:= by
+{
+    simp_rw [Ψ_translates f τ hτ]
+    rw [gradient_Ψ_fixed_domain]
+    congr 1
+    ext p
+    rw [← gradient_translate f p x (hf (p + x))]
+}
 
 lemma grad_Ψ_distributes
     {n : ℕ }
@@ -574,8 +658,8 @@ lemma grad_Ψ_distributes
     {
         unfold lhs
         trace_state
-        rw [(G_vol_translates τ hτ )]
-
+        --rw [(G_vol_translates τ hτ )]
+        sorry
     }
     simp only [(hGtrans x)]
     trace_state
@@ -591,6 +675,7 @@ lemma grad_Ψ_distributes
     trace_state
 
 }
+
 
 /-
     change  (volume {p | p + a ∈ vol}).toReal = (volume vol).toReal
@@ -690,3 +775,55 @@ lemma grad_Ψ
 
 
 }
+
+
+
+/-
+lemma grad_Ψ
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) )
+    (τ : ℝ)
+    (hτ : τ > 0)
+    (x : EuclideanSpace ℝ (Fin n))
+:
+    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
+:= by
+{
+    exact grad_Ψ_let f Ω τ hτ x
+}
+-/
+
+
+
+lemma gradient_translate_1
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (p x : EuclideanSpace ℝ (Fin n))
+    (hf : DifferentiableAt ℝ f (p + x))
+:
+    ∇ (fun x1 ↦ f (p + x1)) x = ∇ f (p + x)
+:= by
+{
+    have hshift : HasFDerivAt (fun x1 => p + x1) (ContinuousLinearMap.id ℝ _) x := by
+        have := (hasFDerivAt_id ℝ x).const_add p
+        simp [add_comm] at this
+        exact this
+    have hcomp := hf.hasFDerivAt.comp x hshift
+    simp [gradient, hcomp.fderiv]
+}
+
+lemma gradient_translate_2
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (p x : EuclideanSpace ℝ (Fin n))
+    (hf : DifferentiableAt ℝ f (p + x))
+:
+    ∇ (fun x1 ↦ f (p + x1)) x = ∇ f (p + x)
+:= by
+    have hshift : HasFDerivAt (fun x1 => p + x1) (ContinuousLinearMap.id ℝ _) x := by
+        have := (hasFDerivAt_id x).const_add p
+        simp [add_comm] at this
+        exact this
+    have hcomp := hf.hasFDerivAt.comp x hshift
+    simp [gradient, hcomp.fderiv]
