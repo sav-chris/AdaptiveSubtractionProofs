@@ -1,12 +1,24 @@
 import AdaptiveSubtraction.Edginess
+
 import Mathlib.Analysis.Calculus.ParametricIntegral
+--import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
 open Set
 open MeasureTheory
 open scoped InnerProductSpace
 
+/-
+https://proofassistants.stackexchange.com/a/6555/6134
 
-def G_0 {n:ℕ}
+https://proofassistants.stackexchange.com/a/5397/6134
+
+https://proofassistants.stackexchange.com/a/5158/6134
+
+-/
+
+def G_0
+    {n:ℕ}
     (τ : ℝ) --radius
 :
     Set (EuclideanSpace ℝ (Fin n))
@@ -14,7 +26,8 @@ def G_0 {n:ℕ}
     { p | ∀ i, |p i| ≤ τ }
 
 
-def G {n:ℕ}
+def G
+    {n:ℕ}
     (x : EuclideanSpace ℝ (Fin n)) --centre
     (τ : ℝ) --radius
 :
@@ -311,6 +324,107 @@ noncomputable def Ψ_vec_1
 :=
     EuclideanSpace.equiv (Fin n) ℝ |>.symm (fun i ↦ Ψ (fun x ↦ F x i) Ω)
 
+noncomputable def Ψ_vec_2
+    {n : ℕ}
+    (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+:
+    EuclideanSpace ℝ (Fin n)
+:=
+    EuclideanSpace.equiv (Fin n) ℝ |>.symm (λ i ↦ Ψ (λ x ↦ F x i) Ω)
+
+lemma foo
+    {n : ℕ}
+    (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+    (hΩ : (volume.real Ω) > 0)
+    (i : Fin n)
+:
+    (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, F x).ofLp i = ∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, (F x).ofLp i
+:= by
+{
+    /-
+    -- 1. Represent the coordinate projection as a ContinuousLinearMap
+    let proj : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ := PiLp.linearProjectionLoop i
+
+    -- 2. Rewrite the left hand side explicitly using this map
+    change proj (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, F x) = ∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, proj (F x)
+
+    -- 3. Commute the integral and the continuous linear map
+    exact ContinuousLinearMap.integral_apply proj
+
+    simpa using (MeasureTheory.integral_apply (μ := volume.restrict Ω) (f := F) i)
+
+    have hproj : Continuous (fun v : EuclideanSpace ℝ (Fin n) => v.ofLp i) :=
+      (EuclideanSpace.proj i).continuous
+    --rw [← (EuclideanSpace.proj i).integral_comp_comm]
+        -- .ofLp i is (EuclideanSpace.proj i) as a ContinuousLinearMap
+    -- ContinuousLinearMap.integral_comp_comm pulls a CLM outside an integral
+    have key := (EuclideanSpace.proj i (𝕜 := ℝ)).integral_comp_comm (f := F) (μ := volume.restrict Ω)
+    -- key : (EuclideanSpace.proj i) (∫ x, F x) = ∫ x, (EuclideanSpace.proj i) (F x)
+    exact key
+    -/
+    sorry
+}
+
+lemma Ψ_vec_eq_Ψ_vec_2
+    {n : ℕ}
+    (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+    --(hΩ : (volume.real Ω) > 0)
+:
+    Ψ_vec F Ω = Ψ_vec_2 F Ω
+:= by
+{
+    /-
+    -- unfold both definitions
+    unfold Ψ_vec Ψ_vec_2 Ψ
+
+    -- extensionality: two vectors are equal iff all coordinates are equal
+    ext i
+    simp_all only
+    [
+        integral_const,
+        MeasurableSet.univ,
+        measureReal_restrict_apply,
+        univ_inter,
+        smul_eq_mul,
+        mul_one,
+        one_div,
+        PiLp.smul_apply,
+        PiLp.continuousLinearEquiv_symm_apply
+    ]
+    trace_state
+    --change (volume.real Ω)⁻¹ * (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, F x).ofLp i = (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, (F x).ofLp i) / volume.real Ω
+    let lhs := (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, F x).ofLp i
+    let d := volume.real Ω
+    let rhs := (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, (F x).ofLp i)
+
+    change d⁻¹ * lhs = rhs / d
+    ring_nf
+    simp only [mul_eq_mul_left_iff, inv_eq_zero]
+
+    have hd : d ≠ 0 := by
+        have := hΩ
+        -- hΩ : volume.real Ω > 0
+        -- so d = volume.real Ω
+        exact ne_of_gt this
+
+    simp_all only [gt_iff_lt, ne_eq, or_false, d, lhs, rhs]
+    --simpa using (integral_apply (fun x => F x) i)
+    --simpa [lhs, rhs] using (integral_apply (fun x => F x) i)
+
+    change (∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, F x).ofLp i = ∫ (x : EuclideanSpace ℝ (Fin n)) in Ω, (F x).ofLp i
+    trace_state
+    -/
+    sorry
+
+    -- evaluate the i-th coordinate of the left-hand side
+    -- (1 / vol) • ∫ F  →  (1 / vol) * ∫ (F x i)
+    --simp [EuclideanSpace.smul_apply, integral_apply, div_eq_inv_mul,
+    --      mul_comm, mul_left_comm, mul_assoc]
+}
+
 /-
 lemma Ψ_vec_eq_Ψ_components
     {n : ℕ}
@@ -577,17 +691,167 @@ noncomputable def Ψ_region
     (λ x1 ↦ (Ψ f (G x1 τ)))
 
 
+
+lemma gradient_Ψ_fixed_domain_1
+    {n : ℕ }
+    (f :
+        EuclideanSpace ℝ (Fin n) →
+        (EuclideanSpace ℝ (Fin n) → ℝ)
+    )
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+:
+    (∇
+        (λ x1 ↦
+            (Ψ
+                (λ p ↦
+                    ((f p) x1)
+                )
+                (G_0 τ)
+            )
+        )
+        x
+    )
+    =
+    (Ψ_vec
+        (λ p ↦
+            (∇
+                (λ x1 ↦
+                    ((f p) x1)
+                )
+                x
+            )
+        )
+        (G_0 τ)
+    )
+:= by
+{
+
+}
+
+
+
+lemma vec_component
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (x2 : EuclideanSpace ℝ (Fin n))
+    (i : Fin n)
+:
+    (∇
+        (λ x1 =>
+            ((f x2) x1)
+        )
+        x
+    ).ofLp i
+    =
+    (fderiv ℝ (λ x1 => (f x2) x1) x) (PiLp.single i 1)
+    --(fderiv ℝ (λ x1 => (f x2) x1) x)
+:= by
+{
+    -- simpa using (gradient_apply (f := λ x1 => (f x2) x1) (x := x) (i := i))
+}
+
+
+lemma Ψ_lambda
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ )
+    (i : Fin n)
+:
+    (∇
+        (λ x1 ↦
+            (Ψ
+                (λ p ↦
+                    ((f p) x1)
+                )
+                (G_0 τ)
+            )
+        )
+        x
+    ).ofLp i
+    =
+    (Ψ
+        (λ x_1 ↦
+            (∇
+                (λ x1 =>
+                    ((f x_1) x1)
+                )
+                x
+            ).ofLp i
+        )
+        (G_0 τ)
+    )
+:= by
+{
+    /-
+    (∇ g x).ofLp i = (fderiv ℝ g x) (PiLp.single i 1)
+    (∇ (λ x1 ↦ (f x_1) x1) x).ofLp i
+
+    -/
+
+
+
+
+}
+
+
 lemma gradient_Ψ_fixed_domain
     {n : ℕ }
-    (g : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
+    (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ )
     -- (+ integrability/differentiability hypotheses)
+    --(h_diff : ∀ p, DifferentiableAt ℝ (fun x1 ↦ g p x1) x)
+    --(h_integrable : Integrable (fun p ↦ ∇ (fun x1 ↦ g p x1) x) (G_0 τ)) -- Type matching your measure/domain
+    --(h_bound : ∀ x' ∈ Neighbor_of x, ∀ p, ‖∇ (fun t ↦ g p t) x'‖ ≤ BoundFunction p) -- For Lebesgue Dominated Convergence
 :
-    ∇ ( λ x1 ↦ Ψ (λ p ↦ g p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (λ x1 ↦ g p x1) x) (G_0 τ)
+    ∇ ( λ x1 ↦ Ψ (λ p ↦ (f p) x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (λ x1 ↦ f p x1) x) (G_0 τ)
 := by
 {
+    let rhs := (λ p ↦ ∇ (λ x1 ↦ f p x1) x)
+    change ∇ ( λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec rhs (G_0 τ)
+    have hτ : τ > 0 := sorry
+
+    simp only [(Ψ_vec_eq_Ψ_vec_2 rhs (G_0 τ))]
+
+    unfold Ψ_vec_2
+    let lhs := (fun x1 ↦ Ψ (fun p ↦ f p x1) (G_0 τ))
+
+    change ∇ lhs x = (EuclideanSpace.equiv (Fin n) ℝ).symm λ i ↦ Ψ (λ x ↦ (rhs x).ofLp i) (G_0 τ)
+    ext i
+    unfold lhs rhs
+    simp only [PiLp.continuousLinearEquiv_symm_apply]
+    trace_state
+    unfold gradient
+    trace_state
+    change ((InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin n))).symm (fderiv ℝ (fun x1 ↦ Ψ (fun p ↦ f p x1) (G_0 τ)) x)).ofLp i = Ψ (fun x_1 ↦ ((InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin n))).symm (fderiv ℝ (fun x1 ↦ f x_1 x1) x)).ofLp i) (G_0 τ)
+    trace_state
+    --change (∇ (fun x1 ↦ Ψ (fun p ↦ f p x1) (G_0 τ)) x).ofLp i = Ψ (fun x_1 ↦ (∇ (fun x1 ↦ f x_1 x1) x).ofLp i) (G_0 τ)
+
+
+    --have h_comp : (λ x1 ↦ f (x1)) = f ∘ (λ x1 ↦ x1) := by rfl
+    --rw [h_comp]
+
     sorry
+    /-
+    --apply [←(Ψ_vec_eq_Ψ_vec_2 rhs (G_0 τ ) (G_0_volume_pos τ hτ)) ]
+    --simp_all only [gt_iff_lt, PiLp.continuousLinearEquiv_symm_apply, rhs]
+
+    -- Step 1: Expose the underlying fderiv structures
+    simp_rw [gradient]
+    trace_state
+
+    -- Step 2: Extract the Riesz Isomorphism (InnerProductSpace.toDual) outside the operator
+    -- This requires a lemma stating that Ψ_vec commutes with linear maps, e.g., `Ψ_vec (L ∘ f) = L (Ψ_vec f)`
+    rw [← Ψ_vec_continuousLinearMap_commute]
+    congr 1
+
+    -- Step 3: Swap the derivative and the integral/operator
+    -- This will resolve via your local variation of `hasFDerivAt_integral_of_dominated_loc`
+    exact fderiv_Ψ_commute g x (G_0 τ) h_diff h_bound
+    -/
 
 }
 
@@ -619,7 +883,7 @@ lemma gradient_translate
     exact ContinuousLinearMap.comp_id _
 }
 
-lemma grad_Ψ_distributes_5
+lemma grad_Ψ_distributes
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (hf : Differentiable ℝ f)
@@ -638,7 +902,7 @@ lemma grad_Ψ_distributes_5
     rw [← gradient_translate f p x (hf (p + x))]
 }
 
-lemma grad_Ψ_distributes
+lemma grad_Ψ_distributes_6
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (Ω : Set (EuclideanSpace ℝ (Fin n)) )
