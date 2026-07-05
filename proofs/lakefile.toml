@@ -11,9 +11,6 @@ autoImplicit = false
 name = "mathlib"
 scope = "leanprover-community"
 
-[[require]]
-scope = "leanprover"
-name = "doc-gen4"
-
 [[lean_lib]]
 name = "AdaptiveSubtraction"
+

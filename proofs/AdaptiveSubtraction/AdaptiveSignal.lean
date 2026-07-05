@@ -750,6 +750,9 @@ lemma vec_component
 := by
 {
     -- simpa using (gradient_apply (f := λ x1 => (f x2) x1) (x := x) (i := i))
+
+
+
 }
 
 

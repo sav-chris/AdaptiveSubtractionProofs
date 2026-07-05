@@ -10,6 +10,10 @@ import Mathlib.Data.Finset.Basic
 
 import AdaptiveSubtraction.Quadratics
 
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import Mathlib.MeasureTheory.Function.L1Space.Integrable
+
+
 open Set Real Filter Topology
 open MeasureTheory
 open scoped InnerProductSpace
@@ -341,26 +345,37 @@ lemma expand_squared_term {n : ℕ}
 
     filter_upwards [h_deriv_eq] with x hx
     ring_nf
-    simp only [smul_eq_mul]
-    ring_nf
-
 
     let u := ∇ I x
     let v := ρ • ∇ B x
+    let w := ρ ^ 2 * ‖∇ B x‖ ^ 2
 
-    have v_sq_h : ρ ^ 2 • ‖(∇ B x)‖ ^ 2 = ‖v‖ ^ 2 := by
+    have v_sq_h : w = ‖v‖ ^ 2 := by
     {
-        unfold v
+        unfold v w
         rw [norm_smul]
         simp_all only [smul_eq_mul, ae_restrict_eq, Real.norm_eq_abs]
         rw [mul_pow]
         simp_all only [sq_abs]
     }
 
-    change ‖(u - v)‖ ^ 2 = ‖u‖ ^ 2 - (ρ • ⟪(∇ I x ) , (∇ B x )⟫_ℝ ) * 2 + ρ ^ 2 • ‖(∇ B x)‖ ^ 2
+    change ‖u - v‖ ^ 2 = ‖u‖ ^ 2 - ⟪∇ I x, ∇ B x⟫_ℝ * ρ * 2 + ρ ^ 2 * ‖∇ B x‖ ^ 2
+    change ‖u - v‖ ^ 2 = ‖u‖ ^ 2 - ⟪∇ I x, ∇ B x⟫_ℝ * ρ * 2 + w
+
     rw [v_sq_h]
 
-    change ‖(u - v)‖ ^ 2 = ‖u‖ ^ 2 - (ρ • ⟪(∇ I x ) , (∇ B x )⟫_ℝ ) • 2 + ‖v‖ ^ 2
+    let t := ⟪∇ I x, ∇ B x⟫_ℝ * ρ
+    change ‖u - v‖ ^ 2 = ‖u‖ ^ 2 - t * 2 + ‖v‖ ^ 2
+
+    have h_t_commute : ρ • ⟪(∇ I x ) , (∇ B x )⟫_ℝ = t := by
+    {
+        unfold t
+        let uu := ⟪∇ I x, ∇ B x⟫_ℝ
+        change ρ • uu = uu * ρ
+        simp only [smul_eq_mul, mul_comm]
+    }
+
+    rw [← h_t_commute]
 
     have h_inner : (ρ • ⟪(∇ I x ) , (∇ B x )⟫_ℝ ) = ⟪u, v⟫_ℝ := by
     {
@@ -369,7 +384,7 @@ lemma expand_squared_term {n : ℕ}
     }
 
     rw [h_inner]
-    simp only [norm_sub_sq_real, smul_eq_mul, mul_comm]
+    simp only [norm_sub_sq_real, mul_comm]
 }
 
 
@@ -696,18 +711,13 @@ theorem edginess_polynomial_eq
     unfold edginess edginess_polynomial
     intro ρ
     unfold quadratic
+
     unfold a_coef b_coef c_coef
-    ring_nf
 
     rw [(deriv_distributes_over_sub_within_integral I B lower upper Ω hM hI hB ρ hΩ_open )]
     rw [(expand_squared_term I B lower upper Ω hM hI hB ρ hΩ_open )]
 
-    ring_nf
     simp_all only [smul_eq_mul ]
-
-    change ∫ x in Ω, ‖∇ I x‖ ^ 2 - ρ * ⟪∇ I x, ∇ B x⟫_ℝ * 2 + ρ ^ 2 * ‖∇ B x‖ ^ 2 = (-((ρ * ∫ x in Ω, ⟪∇ I x, ∇ B x⟫_ℝ) * 2) + ρ ^ 2 * ∫ x in Ω, ⟪∇ B x, ∇ B x⟫_ℝ) + ∫ x in Ω, ⟪∇ I x, ∇ I x⟫_ℝ
-
-    change ∫ x in Ω, (IB_Squared_Term_Norm I x) - (IB_Term I B x ρ ) + (B_Squared_Term_Norm B x ρ) = (-((Int_IB_inner_Term_2 I B ρ lower upper Ω) ) + (Int_B_Squared_Term_ρ B ρ lower upper Ω) ) + (Int_I_Squared_Term I lower upper Ω)
 
     ring_nf
 
@@ -725,7 +735,6 @@ theorem edginess_polynomial_eq
 
     rw [ (integral_distributes_over_addition I B lower upper Ω ρ h_edgable) ]
 }
-
 
 
 theorem edginess_is_quadratic
