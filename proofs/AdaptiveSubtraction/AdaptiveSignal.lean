@@ -678,16 +678,16 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 {
     -- This is a key lemma: the gradient of an average equals the average of the gradients
     -- We prove this by showing we can differentiate under the integral sign
-    
+
     -- First, unfold the definitions
     unfold Ψ Ψ_vec
-    
+
     -- Simplify the integrals of constants
     simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
-    
+
     -- Let vol be the volume of G_0 τ
     let vol := volume.real (G_0 (n := n) τ)
-    
+
     -- Show vol > 0
     have hvol_pos : 0 < vol := by
     {
@@ -696,13 +696,31 @@ lemma gradient_Ψ_fixed_domain_η_reduction
         exact ENNReal.toReal_pos (ne_of_gt hG0_pos) (ne_of_lt hG0_lt_top)
     }
     have hvol_ne : vol ≠ 0 := ne_of_gt hvol_pos
-    
+
+    change  ∇ (fun x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) / vol) x = (1 / vol) • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+
+    have h_div : (fun x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) / vol) =
+                 (fun x1 ↦ (1 / vol) • ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) := by
+    {
+        ext x1
+        simp_all only [ne_eq, one_div, smul_eq_mul]
+        rw [@inv_mul_eq_div]
+    }
+
+    rw [h_div]
+
+    trace_state
+    -- Trace prints
+    -- ⊢ ∇ (fun x1 ↦ (1 / vol) • ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x = (1 / vol) • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+
+    --simp_all only [ne_eq, one_div]
+
     -- The key steps:
     -- 1. Convert division to multiplication: (∫ p, f p x1) / vol = (1/vol) * (∫ p, f p x1)
     -- 2. gradient (c * g) = c • gradient g for constant c
     -- 3. gradient (∫ p, f p x1) = ∫ p, gradient (f p) x1 (differentiating under the integral sign)
     -- For now, we use sorry as the proof is non-trivial and requires hasFDerivAt_integral_of_dominated_of_fderiv_le
-    
+
     sorry
 }
 
@@ -792,19 +810,19 @@ lemma grad_Ψ_distributes
 := by
 {
     simp_rw [Ψ_translates f τ hτ]
-    
+
     -- Apply gradient_Ψ_fixed_domain to the function λ p ↦ λ x1 ↦ f (p + x1)
     -- We need to provide:
     --   hτ : 0 < τ - we have this
     --   hf_diff : ∀ p, DifferentiableAt ℝ (λ x1 ↦ f (p + x1)) x - we derive from hf
     --   hf_int : Integrable (λ p ↦ ∇ (λ x1 ↦ f (p + x1)) x) (volume.restrict (G_0 τ)) - we derive from hf_grad_int
-    
+
     have hf_diff : ∀ p, DifferentiableAt ℝ (λ x1 ↦ f (p + x1)) x := by
         intro p
         -- f is differentiable everywhere, so f (p + ·) is differentiable at x by chain rule
         have : DifferentiableAt ℝ (λ x1 ↦ p + x1) x := differentiableAt_id.const_add p
         exact hf.differentiableAt.comp x this
-    
+
     have hf_int : Integrable (λ p ↦ ∇ (λ x1 ↦ f (p + x1)) x) (volume.restrict (G_0 τ)) := by
         -- ∇ (λ x1 ↦ f (p + x1)) x = ∇ f (p + x) by gradient_translate
         have : ∀ p, ∇ (λ x1 ↦ f (p + x1)) x = ∇ f (p + x) := by
@@ -812,7 +830,7 @@ lemma grad_Ψ_distributes
             exact gradient_translate f p x (hf (p + x))
         simp_rw [this]
         exact hf_grad_int
-    
+
     rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int]
     congr 1
     ext p
