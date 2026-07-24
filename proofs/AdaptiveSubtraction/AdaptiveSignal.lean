@@ -774,28 +774,91 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     }
 
     change inv_vol • lhs = inv_vol • rhs
+    have h1_vol_ne : inv_vol ≠ 0 := by
+    {
+        simp only [ne_eq, inv_eq_zero, inv_vol]
+        simp_all only [ne_eq, inv_eq_zero, not_false_eq_true, vol, inv_vol]
+    }
 
-    rw [← @setAverage_eq]
+    change inv_vol • lhs = inv_vol • rhs
+    rw [← propext (inv_smul_eq_iff₀ h_nz)]
+
+    let ident := (inv_vol⁻¹ • inv_vol )
+
+    have h_ident : ident = 1 := by
+    {
+        simp_all only
+        [
+            ne_eq,
+            inv_eq_zero,
+            not_false_eq_true,
+            smul_eq_mul,
+            inv_inv,
+            mul_inv_cancel₀,
+            vol,
+            inv_vol,
+            ident
+        ]
+    }
+
+    rw [inv_smul_eq_iff₀ h_nz]
+    simp [inv_vol, h_nz]
+
+    unfold lhs rhs FF
+
+    change ∇ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x = ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+
+    trace_state
 
     /-
-    have h_FF_diff : DifferentiableAt ℝ FF x := by
+    rw [← @setAverage_eq]
+
+    have h_inv_vol_nz : 1 / vol ≠ 0 := by
     {
-        unfold FF
-        trace_state
-        sorry
+        simp_all only [ne_eq, inv_eq_zero, not_false_eq_true, one_div, vol, inv_vol]
     }
+
+    --have h1_vol_ne : 1 / vol ≠ 0 := one_div_ne_zero hvol_ne
+
+    --apply [h1_vol_ne]
+
+    --change inv_vol • lhs = ⨍ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+    unfold lhs FF
+    change inv_vol • ∇ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x = ⨍ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+-/
+
+    trace_state
+
+    -- Since inv_vol ≠ 0, we can cancel it from both sides
+    -- We need: lhs = rhs, i.e., ∇ (fun x1 ↦ FF x1) x = ∫ p in G_0 τ, ∇ (f p) x
+    /-
+    -- Cancel inv_vol from both sides
+    have h_inv_vol_ne : inv_vol ≠ 0 := by
+        simp only [ne_eq, inv_vol]
+        simp_all only [inv_eq_zero, not_false_eq_true]
+
+    -- Use: if c • a = c • b and c ≠ 0, then a = b
+    have h_cancel : inv_vol • lhs = inv_vol • rhs → lhs = rhs := by
+        intro h
+        -- Multiply both sides by vol
+        have step1 : vol • (inv_vol • lhs) = vol • (inv_vol • rhs) := by rw [h]
+        -- Simplify: vol • (inv_vol • v) = (vol * inv_vol) • v using mul_smul
+        rw [← mul_smul, ← mul_smul] at step1
+        -- vol * inv_vol = 1
+        have h_vol_inv : vol * inv_vol = 1 := by
+            simp only [inv_vol, mul_inv_cancel, hvol_ne]
+        rw [h_vol_inv, one_smul, h_vol_inv, one_smul] at step1
+        exact step1
+
+    apply h_cancel
     -/
 
+    -- Now we need to prove the key step:
+    -- lhs = rhs, i.e., ∇ (fun x1 ↦ FF x1) x = ∫ p in G_0 τ, ∇ (f p) x
+    -- where FF x1 = ∫ p in G_0 τ, f p x1
+    -- This requires differentiating under the integral sign
 
-    -- Factor out (1/vol): gradient (c • g) = c • gradient g for constant scalar c
-    -- First, note that (1/vol) • (integral) is scalar multiplication in ℝ, which equals multiplication
-    -- So we have: (1/vol) • ∫ x, f x x1 = (1/vol) * ∫ x, f x x1
-    -- And we need: ∇ (fun x1 ↦ (1/vol) * ∫ x, f x x1) x = (1/vol) • ∇ (fun x1 ↦ ∫ x, f x x1) x
 
-    -- For real-valued functions, a • b = a * b, so we can work with multiplication
-    -- The key is fderiv_const_mul: fderiv (fun y => b * a y) x = b • fderiv a x
-
-    sorry
 }
 
 
