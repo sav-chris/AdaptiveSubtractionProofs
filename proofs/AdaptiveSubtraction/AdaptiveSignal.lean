@@ -660,6 +660,52 @@ lemma RHS_eta_reduction
 :=
     rfl
 
+def E{n : ℕ } := EuclideanSpace ℝ (Fin n)
+
+lemma lambda_scalar_mul
+    {n : ℕ}
+    (vol : ℝ )
+    (FF : EuclideanSpace ℝ (Fin n) → ℝ )
+    (x : EuclideanSpace ℝ (Fin n))
+    (h1_vol_ne : 1 / vol ≠ 0)
+    (h_diff : DifferentiableAt ℝ FF x)
+:
+    ∇ (λ x1 ↦ vol⁻¹ * (FF x1) ) x = vol⁻¹ • ∇ (λ x1 ↦ (FF x1) ) x
+:= by
+{
+    classical
+
+    -- First rewrite the scalar multiplication into the form `c • FF x1`
+    have h_vol_pull : (λ x1 ↦ vol⁻¹ * FF x1) = (vol⁻¹) • (λ x1 ↦  FF x1) := by
+    {
+        funext x1
+        simp_all only [one_div, ne_eq, inv_eq_zero]
+        simp_all only [Pi.smul_apply, smul_eq_mul]
+    }
+
+    simp only [h_vol_pull]
+
+    let FF_fun := fun x1 ↦ FF x1
+    let inv_vol := vol⁻¹
+    have h_nz : inv_vol ≠ 0 := by
+    {
+        simp only [ne_eq]
+        simp_all only [one_div, ne_eq, inv_eq_zero, not_false_eq_true, inv_vol]
+    }
+    change ∇ (inv_vol • FF_fun) x = inv_vol • ∇ (FF_fun) x
+
+    unfold gradient
+
+    rw [fderiv_const_smul]
+
+    simp only [map_smul]
+
+    have h_FF_diff : DifferentiableAt ℝ FF_fun x := by
+    {
+        simp_all only [one_div, ne_eq, inv_eq_zero, not_false_eq_true, inv_vol, FF_fun]
+    }
+    simp only [h_FF_diff]
+}
 
 lemma gradient_Ψ_fixed_domain_η_reduction
     {n : ℕ }
@@ -709,17 +755,45 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     rw [h_div]
 
-    trace_state
-    -- Trace prints
-    -- ⊢ ∇ (fun x1 ↦ (1 / vol) • ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x = (1 / vol) • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+    have h1_vol_ne : (1 / vol) ≠ 0 := one_div_ne_zero hvol_ne
+    simp_all only [ne_eq, one_div, smul_eq_mul, inv_eq_zero, not_false_eq_true]
 
-    --simp_all only [ne_eq, one_div]
+    let FF := λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1
+    change ∇ (fun x1 ↦ vol⁻¹ * (FF x1) ) x  = vol⁻¹ • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
 
-    -- The key steps:
-    -- 1. Convert division to multiplication: (∫ p, f p x1) / vol = (1/vol) * (∫ p, f p x1)
-    -- 2. gradient (c * g) = c • gradient g for constant c
-    -- 3. gradient (∫ p, f p x1) = ∫ p, gradient (f p) x1 (differentiating under the integral sign)
-    -- For now, we use sorry as the proof is non-trivial and requires hasFDerivAt_integral_of_dominated_of_fderiv_le
+    rw [lambda_scalar_mul]
+
+    let lhs : EuclideanSpace ℝ (Fin n) := ∇ (fun x1 ↦ FF x1) x
+    let rhs : EuclideanSpace ℝ (Fin n) := ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+    let inv_vol : ℝ := vol⁻¹
+
+    have h_nz : inv_vol ≠ 0 := by
+    {
+        simp only [ne_eq]
+        simp_all only [inv_eq_zero, not_false_eq_true, inv_vol]
+    }
+
+    change inv_vol • lhs = inv_vol • rhs
+
+    rw [← @setAverage_eq]
+
+    /-
+    have h_FF_diff : DifferentiableAt ℝ FF x := by
+    {
+        unfold FF
+        trace_state
+        sorry
+    }
+    -/
+
+
+    -- Factor out (1/vol): gradient (c • g) = c • gradient g for constant scalar c
+    -- First, note that (1/vol) • (integral) is scalar multiplication in ℝ, which equals multiplication
+    -- So we have: (1/vol) • ∫ x, f x x1 = (1/vol) * ∫ x, f x x1
+    -- And we need: ∇ (fun x1 ↦ (1/vol) * ∫ x, f x x1) x = (1/vol) • ∇ (fun x1 ↦ ∫ x, f x x1) x
+
+    -- For real-valued functions, a • b = a * b, so we can work with multiplication
+    -- The key is fderiv_const_mul: fderiv (fun y => b * a y) x = b • fderiv a x
 
     sorry
 }
