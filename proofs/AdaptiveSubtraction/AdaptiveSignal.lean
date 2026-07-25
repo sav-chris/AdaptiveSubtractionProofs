@@ -660,7 +660,7 @@ lemma RHS_eta_reduction
 :=
     rfl
 
-def E{n : ℕ } := EuclideanSpace ℝ (Fin n)
+-- def E{n : ℕ } := EuclideanSpace ℝ (Fin n)
 
 lemma lambda_scalar_mul
     {n : ℕ}
@@ -707,6 +707,7 @@ lemma lambda_scalar_mul
     simp only [h_FF_diff]
 }
 
+
 lemma gradient_Ψ_fixed_domain_η_reduction
     {n : ℕ }
     (f :
@@ -718,12 +719,18 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     (hτ : 0 < τ)
     (hf_diff : ∀ p, DifferentiableAt ℝ (f p) x)
     (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
+    -- Additional assumptions for the Leibniz integral rule
+    (hf_int_at_x : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
+    (hf_meas : ∀ x1, ∀ p, Measurable (f p x1))
+    (hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
+               LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
+    (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
 :
     ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
 := by
 {
     -- This is a key lemma: the gradient of an average equals the average of the gradients
-    -- We prove this by showing we can differentiate under the integral sign
+    -- We prove this by showing we can differentiate under the integral sign using the Leibniz rule
 
     -- First, unfold the definitions
     unfold Ψ Ψ_vec
@@ -754,7 +761,6 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     }
 
     rw [h_div]
-
     have h1_vol_ne : (1 / vol) ≠ 0 := one_div_ne_zero hvol_ne
     simp_all only [ne_eq, one_div, smul_eq_mul, inv_eq_zero, not_false_eq_true]
 
@@ -763,102 +769,163 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     rw [lambda_scalar_mul]
 
-    let lhs : EuclideanSpace ℝ (Fin n) := ∇ (fun x1 ↦ FF x1) x
-    let rhs : EuclideanSpace ℝ (Fin n) := ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+    let lhs := ∇ (fun x1 ↦ FF x1) x
+    let rhs := ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
     let inv_vol : ℝ := vol⁻¹
 
     have h_nz : inv_vol ≠ 0 := by
-    {
-        simp only [ne_eq]
-        simp_all only [inv_eq_zero, not_false_eq_true, inv_vol]
-    }
+        simp only [ne_eq, inv_eq_zero, not_false_eq_true, inv_vol, vol, hvol_ne]
 
     change inv_vol • lhs = inv_vol • rhs
-    have h1_vol_ne : inv_vol ≠ 0 := by
-    {
-        simp only [ne_eq, inv_eq_zero, inv_vol]
-        simp_all only [ne_eq, inv_eq_zero, not_false_eq_true, vol, inv_vol]
-    }
+    have eq_without_smul : lhs = rhs := (inv_smul_eq_iff₀ h_nz).mp (by assumption)
+    rw [eq_without_smul]
 
-    change inv_vol • lhs = inv_vol • rhs
-    rw [← propext (inv_smul_eq_iff₀ h_nz)]
-
-    let ident := (inv_vol⁻¹ • inv_vol )
-
-    have h_ident : ident = 1 := by
-    {
-        simp_all only
-        [
-            ne_eq,
-            inv_eq_zero,
-            not_false_eq_true,
-            smul_eq_mul,
-            inv_inv,
-            mul_inv_cancel₀,
-            vol,
-            inv_vol,
-            ident
-        ]
-    }
-
-    rw [inv_smul_eq_iff₀ h_nz]
-    simp [inv_vol, h_nz]
-
+    -- Now prove the key step: gradient of integral equals integral of gradients
     unfold lhs rhs FF
+    change ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f p) x
 
-    change ∇ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x = ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
+    -- Strategy: Use the relationship between gradient and fderiv,
+    -- then apply the Leibniz rule for fderiv, then convert back.
+    -- ∇ g x = (toDual ℝ _).symm (fderiv ℝ g x)
+    -- So we need: fderiv ℝ (λ x1 ↦ ∫ p, f p x1) x = ∫ p, fderiv ℝ (f p) x
 
-    trace_state
+    -- Define the measure
+    let μ := volume.restrict (G_0 (n := n) τ)
 
-    /-
-    rw [← @setAverage_eq]
+    -- Define F : H → α → E where H = EuclideanSpace, α = EuclideanSpace, E = ℝ
+    let F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ := λ x1 p ↦ f p x1
 
-    have h_inv_vol_nz : 1 / vol ≠ 0 := by
+    -- We need F' : α → H →L[ℝ] E, but E = ℝ so H →L[ℝ] ℝ
+    -- F' p should be fderiv ℝ (f p) x, but this depends on x, not just p
+    -- Actually, we want the derivative with respect to x1 at point x
+    -- So F' p = fderiv ℝ (λ x1 ↦ f p x1) x = fderiv ℝ (f p) x
+    let F' : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ := λ p ↦ fderiv ℝ (f p) x
+
+    -- Extract Lipschitz parameters
+    obtain ⟨ε, hε_pos, h_lip⟩ := hf_lip
+
+    -- We need to verify the conditions for hasFDerivAt_integral_of_dominated_loc_of_lip
+    -- 1. s ∈ 𝓝 x - we use ball x ε
+    -- 2. ∀ᶠ x1 in 𝓝 x, AEStronglyMeasurable (F x1) μ
+    have hF_meas' : ∀ᶠ x1 in 𝓝 x, AEStronglyMeasurable (F x1) μ := by
     {
-        simp_all only [ne_eq, inv_eq_zero, not_false_eq_true, one_div, vol, inv_vol]
+        unfold F μ
+        simp only
+        -- We have hf_meas : ∀ x1, ∀ p, Measurable (f p x1)
+        -- This means for each x1, λ p ↦ f p x1 is measurable
+        apply eventually_of_forall
+        intro x1
+        unfold AEStronglyMeasurable
+        intro s hs
+        use s
+        constructor
+        · exact hs
+        · intro p hp
+          exact hf_meas x1 p
     }
 
-    --have h1_vol_ne : 1 / vol ≠ 0 := one_div_ne_zero hvol_ne
+    -- 3. Integrable (F x) μ
+    have hF_int_x : Integrable (F x) μ := by
+    {
+        unfold F μ
+        simp only
+        exact hf_int_at_x
+    }
 
-    --apply [h1_vol_ne]
+    -- 4. AEStronglyMeasurable F' μ
+    have hF'_meas : AEStronglyMeasurable F' μ := by
+    {
+        unfold F' μ
+        simp only
+        exact hf_fderiv_meas
+    }
 
-    --change inv_vol • lhs = ⨍ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
-    unfold lhs FF
-    change inv_vol • ∇ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x = ⨍ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f x_1) x
--/
+    -- 5. ∀ᵐ a ∂μ, LipschitzOnWith (Real.nnabs <| bound a) (F · a) s
+    -- We have h_lip : ∀ᵐ p ∂μ, LipschitzOnWith (Real.nnabs 1) (f p) (ball x ε)
+    -- F · p = λ x1 ↦ f p x1, so this is exactly what we need
+    have h_lip' : ∀ᵐ p ∂μ, LipschitzOnWith (Real.nnabs (1 : ℝ)) (F · p) (Metric.ball x ε) := by
+    {
+        unfold F
+        simp only
+        exact h_lip
+    }
 
-    trace_state
+    -- 6. Integrable bound μ - bound is constant 1
+    let bound : EuclideanSpace ℝ (Fin n) → ℝ := λ _ ↦ 1
+    have h_bound_int : Integrable (bound : EuclideanSpace ℝ (Fin n) → ℝ) μ := by
+    {
+        unfold bound
+        simp only [integrable_const]
+        have : volume (G_0 (n := n) τ) < ⊤ := G_0_volume_lt_top τ hτ
+        simp [Measure.restrict_apply, this]
+    }
 
-    -- Since inv_vol ≠ 0, we can cancel it from both sides
-    -- We need: lhs = rhs, i.e., ∇ (fun x1 ↦ FF x1) x = ∫ p in G_0 τ, ∇ (f p) x
-    /-
-    -- Cancel inv_vol from both sides
-    have h_inv_vol_ne : inv_vol ≠ 0 := by
-        simp only [ne_eq, inv_vol]
-        simp_all only [inv_eq_zero, not_false_eq_true]
+    -- 7. ∀ᵐ a ∂μ, HasFDerivAt (F · a) (F' a) x
+    have h_diff : ∀ᵐ p ∂μ, HasFDerivAt (F · p) (F' p) x := by
+    {
+        unfold F F'
+        simp only
+        -- We have hf_diff : ∀ p, DifferentiableAt ℝ (f p) x
+        -- which is ∀ p, HasFDerivAt (f p) (fderiv ℝ (f p) x) x
+        apply ae_of_all
+        intro p
+        exact hf_diff p
+    }
 
-    -- Use: if c • a = c • b and c ≠ 0, then a = b
-    have h_cancel : inv_vol • lhs = inv_vol • rhs → lhs = rhs := by
-        intro h
-        -- Multiply both sides by vol
-        have step1 : vol • (inv_vol • lhs) = vol • (inv_vol • rhs) := by rw [h]
-        -- Simplify: vol • (inv_vol • v) = (vol * inv_vol) • v using mul_smul
-        rw [← mul_smul, ← mul_smul] at step1
-        -- vol * inv_vol = 1
-        have h_vol_inv : vol * inv_vol = 1 := by
-            simp only [inv_vol, mul_inv_cancel, hvol_ne]
-        rw [h_vol_inv, one_smul, h_vol_inv, one_smul] at step1
-        exact step1
+    -- Now apply the theorem
+    have key := hasFDerivAt_integral_of_dominated_loc_of_lip
+      (ball_mem_nhds x hε_pos)
+      hF_meas'
+      hF_int_x
+      hF'_meas
+      h_lip'
+      h_bound_int
+      h_diff
 
-    apply h_cancel
-    -/
+    -- key gives us: Integrable F' μ ∧ HasFDerivAt (fun x1 ↦ ∫ p, F x1 p ∂μ) (∫ p, F' p ∂μ) x
+    -- We need the HasFDerivAt part
+    have h_has_fderiv := key.2
 
-    -- Now we need to prove the key step:
-    -- lhs = rhs, i.e., ∇ (fun x1 ↦ FF x1) x = ∫ p in G_0 τ, ∇ (f p) x
-    -- where FF x1 = ∫ p in G_0 τ, f p x1
-    -- This requires differentiating under the integral sign
+    -- Unfold what this means
+    unfold F F' μ at h_has_fderiv
+    simp only at h_has_fderiv
 
+    -- Now we need to convert from HasFDerivAt to fderiv equality
+    -- HasFDerivAt g lg x means fderiv ℝ g x = lg
+    have h_fderiv_eq : fderiv ℝ (fun x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, fderiv ℝ (f p) x := by
+    {
+        unfold HasFDerivAt at h_has_fderiv
+        simp only [fderiv] at h_has_fderiv
+        exact h_has_fderiv
+    }
 
+    -- Now use the relationship between gradient and fderiv
+    -- ∇ g x = (toDual ℝ _).symm (fderiv ℝ g x)
+    -- So: LHS = (toDual ℝ _).symm (fderiv ℝ (λ x1 ↦ ∫ p, f p x1) x)
+    --         = (toDual ℝ _).symm (∫ p, fderiv ℝ (f p) x)  [by h_fderiv_eq]
+    --         = ∫ p, (toDual ℝ _).symm (fderiv ℝ (f p) x)  [by linearity of toDual.symm]
+    --         = ∫ p, ∇ (f p) x  [by definition of gradient]
+    --         = RHS
+
+    -- Apply toDual to both sides to convert to fderiv
+    have : (toDual ℝ (EuclideanSpace ℝ (Fin n))) (∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x) =
+           (toDual ℝ (EuclideanSpace ℝ (Fin n))) (∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f p) x) := by
+    {
+        -- LHS: (toDual ℝ _) (∇ (...)) = fderiv ℝ (...) x by toDual_gradient
+        -- RHS: (toDual ℝ _) (∫ p, ∇ (f p) x) = ∫ p, (toDual ℝ _) (∇ (f p) x) by linearity
+        --     = ∫ p, fderiv ℝ (f p) x by toDual_gradient
+        -- And we know fderiv ℝ (∫ p, f p) x = ∫ p, fderiv ℝ (f p) x by h_fderiv_eq
+        rw [toDual_gradient, toDual_gradient]
+        simp only
+        rw [ContinuousLinearMap.integral_apply]
+        · exact h_fderiv_eq
+        · -- Need: Integrable (λ p ↦ (toDual ℝ _) (∇ (f p) x)) μ
+          convert hf_int using 1
+          simp only [toDual_gradient]
+    }
+
+    -- Since toDual is injective, we can conclude
+    exact (toDual ℝ (EuclideanSpace ℝ (Fin n))).injective this
 }
 
 
@@ -873,6 +940,12 @@ lemma gradient_Ψ_fixed_domain
     (hτ : 0 < τ)
     (hf_diff : ∀ p, DifferentiableAt ℝ (f p) x)
     (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
+    -- Additional assumptions for the Leibniz integral rule
+    (hf_int_at_x : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
+    (hf_meas : ∀ x1, ∀ p, Measurable (f p x1))
+    (hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
+               LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
+    (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
 :
     (∇
         --(Ψ_lambda_func f τ)
@@ -902,7 +975,7 @@ lemma gradient_Ψ_fixed_domain
 {
     change  ∇ (fun x1 ↦ Ψ (fun p ↦ f p x1) (G_0 τ)) x = (lambda_expression f x τ)
     rw [RHS_eta_reduction ]
-    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int)
+    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas)
 }
 
 
@@ -968,7 +1041,25 @@ lemma grad_Ψ_distributes
         simp_rw [this]
         exact hf_grad_int
 
-    rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int]
+    -- Need to provide additional assumptions for the Leibniz rule
+    have hf_int_at_x : Integrable (λ p ↦ (λ x1 ↦ f (p + x1)) x) (volume.restrict (G_0 τ)) := by
+        simp only
+        have : ∀ p, (λ x1 ↦ f (p + x1)) x = f (p + x) := by intro p; rfl
+        simp_rw [this]
+        -- Need integrability of f (p + x) - this may need to be added as an assumption
+        sorry
+
+    have hf_meas : ∀ x1, ∀ p, Measurable ((λ x1 ↦ f (p + x1)) p x1) := by
+        sorry
+
+    have hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
+                   LipschitzOnWith (Real.nnabs (1 : ℝ)) (λ x1 ↦ f (p + x1)) (Metric.ball x ε) := by
+        sorry
+
+    have hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (λ x1 ↦ f (p + x1)) x) (volume.restrict (G_0 τ)) := by
+        sorry
+
+    rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas]
     congr 1
     ext p
     rw [← gradient_translate f p x (hf (p + x))]
