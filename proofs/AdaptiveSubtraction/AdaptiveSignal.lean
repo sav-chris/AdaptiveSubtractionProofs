@@ -721,7 +721,7 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
     -- Additional assumptions for the Leibniz integral rule
     (hf_int_at_x : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
-    (hf_meas : ∀ x1, ∀ p, Measurable (f p x1))
+    (hf_meas : ∀ x1, Measurable (λ p ↦ f p x1) )
     (hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
                LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
     (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
@@ -777,8 +777,8 @@ lemma gradient_Ψ_fixed_domain_η_reduction
         simp only [ne_eq, inv_eq_zero, not_false_eq_true, inv_vol, vol, hvol_ne]
 
     change inv_vol • lhs = inv_vol • rhs
-    have eq_without_smul : lhs = rhs := (inv_smul_eq_iff₀ h_nz).mp (by assumption)
-    rw [eq_without_smul]
+
+    simp [inv_vol, h_nz]
 
     -- Now prove the key step: gradient of integral equals integral of gradients
     unfold lhs rhs FF
@@ -807,21 +807,21 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     -- We need to verify the conditions for hasFDerivAt_integral_of_dominated_loc_of_lip
     -- 1. s ∈ 𝓝 x - we use ball x ε
     -- 2. ∀ᶠ x1 in 𝓝 x, AEStronglyMeasurable (F x1) μ
+    -- We have hf_meas : ∀ x1, Measurable (λ p ↦ f p x1) μ
+    -- F x1 p = f p x1, so F x1 = λ p ↦ f p x1
     have hF_meas' : ∀ᶠ x1 in 𝓝 x, AEStronglyMeasurable (F x1) μ := by
     {
-        unfold F μ
+        unfold F
         simp only
-        -- We have hf_meas : ∀ x1, ∀ p, Measurable (f p x1)
-        -- This means for each x1, λ p ↦ f p x1 is measurable
         apply eventually_of_forall
         intro x1
+        -- hf_meas x1 gives us Measurable (λ p ↦ f p x1) μ
+        -- We need AEStronglyMeasurable (λ p ↦ f p x1) μ
+        have := hf_meas x1
         unfold AEStronglyMeasurable
         intro s hs
-        use s
-        constructor
-        · exact hs
-        · intro p hp
-          exact hf_meas x1 p
+        -- Measurable implies AEStronglyMeasurable
+        exact ⟨s, hs, this⟩
     }
 
     -- 3. Integrable (F x) μ
@@ -942,7 +942,7 @@ lemma gradient_Ψ_fixed_domain
     (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
     -- Additional assumptions for the Leibniz integral rule
     (hf_int_at_x : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
-    (hf_meas : ∀ x1, ∀ p, Measurable (f p x1))
+    (hf_meas : ∀ x1, Measurable (λ p ↦ f p x1) (volume.restrict (G_0 τ)))
     (hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
                LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
     (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
@@ -1049,7 +1049,7 @@ lemma grad_Ψ_distributes
         -- Need integrability of f (p + x) - this may need to be added as an assumption
         sorry
 
-    have hf_meas : ∀ x1, ∀ p, Measurable ((λ x1 ↦ f (p + x1)) p x1) := by
+    have hf_meas : ∀ x1, Measurable (λ p ↦ f (p + x1)) (volume.restrict (G_0 τ)) := by
         sorry
 
     have hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
