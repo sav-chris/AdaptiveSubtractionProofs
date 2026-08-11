@@ -4,6 +4,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 --import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.MeasureTheory.Measure.FiniteMeasure
 
 open Set
 open MeasureTheory
@@ -838,21 +839,71 @@ lemma grad_integral_swap
     sorry
 }
 
-lemma differentiableAt_integral_param_smooth
+lemma differentiableAt_integral_param_smooth_1
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
     (τ : ℝ)
     (x : EuclideanSpace ℝ (Fin n))
     -- not sure I have the right hypothesis after here
-    (hf_smooth : ∀ p, ContDiffAt ℝ 1 (f p) x)
-    (hf_int : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
-    (hf_int_grad : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
+   -- (hf_smooth : ∀ p, ContDiffAt ℝ 1 (f p) x)
+   -- (hf_int : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
+    --(hf_int_grad : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
   :
     DifferentiableAt ℝ (fun x1 ↦ ∫ p in G_0 τ, f p x1) x
 := by
 {
-
+    sorry
     trace_state
+}
+
+
+lemma differentiableAt_integral_param_smooth
+    {n : ℕ}
+    (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
+    (τ : ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    -- measure on the parameter space
+    (μ : Measure (EuclideanSpace ℝ (Fin n)) := volume.restrict (G_0 τ))
+    [FiniteMeasure μ]
+    -- measurability / integrability of the integrand at x
+    (hf_meas : AEStronglyMeasurable (fun p ↦ f p x) μ)
+    (hf_int  : Integrable (fun p ↦ f p x) μ)
+    -- a.e. differentiability in x
+    (hf_diff :
+      ∀ᵐ p ∂μ, DifferentiableAt ℝ (fun x1 ↦ f p x1) x)
+    -- measurability / integrability of the derivative
+    (hf_deriv_meas :
+      AEStronglyMeasurable
+        (fun p ↦ fderiv ℝ (fun x1 ↦ f p x1) x) μ)
+    (hf_deriv_int :
+      Integrable
+        (fun p ↦ fderiv ℝ (fun x1 ↦ f p x1) x) μ)
+    -- domination of the derivative by an integrable function
+    (g : EuclideanSpace ℝ (Fin n) → ℝ)
+    (hg_meas : AEStronglyMeasurable g μ)
+    (hg_int  : Integrable g μ)
+    (hf_bound :
+      ∀ᵐ p ∂μ,
+        ‖fderiv ℝ (fun x1 ↦ f p x1) x‖ ≤ g p)
+:
+    DifferentiableAt ℝ (fun x1 ↦ ∫ p, f p x1 ∂μ) x
+:= by
+{
+    trace_state
+    -- use the general "differentiate under the integral" lemma
+    have hF :
+        HasFDerivAt ℝ (fun x1 ↦ ∫ p, f p x1 ∂μ)
+          (∫ p, fderiv ℝ (fun x1 ↦ f p x1) x ∂μ) x
+    := by
+    {
+        trace_state
+        aesop?
+        /-
+        hasFDerivAt_integral_of_dominated_of_finiteMeasure
+          hf_meas hf_int hf_diff hf_deriv_meas hf_deriv_int
+          hg_meas hg_int hf_bound
+        exact hF.differentiableAt -/
+    }
 }
 
 
@@ -866,14 +917,18 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
     (hτ : 0 < τ)
+    /-
     (hf_diff : ∀ p, DifferentiableAt ℝ (f p) x)
     (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
     -- Additional assumptions for the Leibniz integral rule
+
     (hf_int_at_x : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
     (hf_meas : ∀ x1, Measurable (λ p ↦ f p x1) )
     (hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
                LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
     (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
+    -/
+    (h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x)
 :
     ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
 := by
@@ -928,7 +983,6 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     change inv_vol • lhs = inv_vol • rhs
 
     simp [inv_vol, h_nz]
-    trace_state
 
     -- Now prove the key step: gradient of integral equals integral of gradients
     unfold lhs rhs FF
@@ -938,10 +992,12 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     simp_all only
     [
+        /-
         gt_iff_lt,
         zero_le_one,
         Real.nnabs_of_nonneg,
         Real.toNNReal_one,
+        -/
         one_div,
         ne_eq,
         inv_eq_zero,
@@ -951,7 +1007,9 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     unfold FF
     -- ⊢ DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x
-    trace_state
+    simp only [h_diff_func]
+
+    --simp only [differentiableAt_integral_param_smooth]
     -- past attempts below
     /-
     -- Strategy: Use the relationship between gradient and fderiv,
