@@ -274,6 +274,7 @@ lemma G_vol_translates
 /-
 ∀ x,  |G(x)| = |G(0)|
 -/
+/-
 lemma G_vol_translates_1
     {n : ℕ }
     (τ : ℝ )
@@ -307,7 +308,7 @@ lemma G_vol_translates_1
 
     simp only [measure_preimage_add_right]
 }
-
+-/
 
 noncomputable def Ψ_vec
     {n : ℕ}
@@ -318,7 +319,7 @@ noncomputable def Ψ_vec
 :=
     (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
 
-
+/-
 noncomputable def Ψ_vec_1
     {n : ℕ}
     (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n))
@@ -336,7 +337,7 @@ noncomputable def Ψ_vec_2
     EuclideanSpace ℝ (Fin n)
 :=
     EuclideanSpace.equiv (Fin n) ℝ |>.symm (λ i ↦ Ψ (λ x ↦ F x i) Ω)
-
+-/
 
 lemma volsEqual
     {n : ℕ}
@@ -563,6 +564,7 @@ theorem Ψ_translates
 }
 
 
+/-
 noncomputable def Ψ_region
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -573,7 +575,7 @@ noncomputable def Ψ_region
     EuclideanSpace ℝ (Fin n) → ℝ
 :=
     (λ x1 ↦ (Ψ f (G x1 τ)))
-
+-/
 
 noncomputable def Ψ_lambda
     {n : ℕ }
@@ -586,10 +588,10 @@ noncomputable def Ψ_lambda
     (λ x1 ↦
       Ψ
         (λ p ↦ f x1 p)
-        --(λ p ↦ f p x1)
         (G_0 τ)
     )
 
+/-
 noncomputable def Ψ_lambda_η
     {n : ℕ }
     (f :
@@ -603,8 +605,9 @@ noncomputable def Ψ_lambda_η
         (f x1)
         (G_0 τ)
     )
+-/
 
-
+/-
 lemma gradient_Ψ_fixed_domain_η_reduction_1
     {n : ℕ }
     (f :
@@ -621,8 +624,9 @@ lemma gradient_Ψ_fixed_domain_η_reduction_1
     --trace_state
     rfl
 }
+-/
 
-
+/-
 noncomputable def Ψ_lambda_func
     {n : ℕ }
     (f :
@@ -640,7 +644,7 @@ noncomputable def Ψ_lambda_func
             (G_0 τ)
         )
     )
-
+-/
 
 noncomputable def lambda_expression
     {n : ℕ}
@@ -711,6 +715,41 @@ lemma lambda_scalar_mul
     simp only [h_FF_diff]
 }
 
+
+
+lemma grad_integral_swap
+    {n : ℕ }
+    (f :
+        EuclideanSpace ℝ (Fin n) →
+        (EuclideanSpace ℝ (Fin n) → ℝ)
+    )
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+    (hτ : 0 < τ)
+    (h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x)
+
+    /-
+    (hf_diff : ∀ p, DifferentiableAt ℝ (f p) x)
+    (hf_meas : Measurable (λ p ↦ ∇ (f p) x))
+    (hf_int_f : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
+    (hf_int_grad : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
+    (g : EuclideanSpace ℝ (Fin n) → ℝ)
+    (hg_int : Integrable g (volume.restrict (G_0 τ)))
+    (hg_bound : ∀ p, ‖∇ (f p) x‖ ≤ g p)
+    -/
+    /-
+    (hf_diff : ∀ p, DifferentiableAt ℝ (f p) x)
+    (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
+    (hf_int_f : Integrable (λ p ↦ f p x) (volume.restrict (G_0 τ)))
+-/
+:
+    ∇ (fun x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f p) x
+:= by
+{
+    sorry
+}
+
+/-
 lemma grad_integral_swap
     {n : ℕ }
     (f :
@@ -838,7 +877,8 @@ lemma grad_integral_swap
     }
     sorry
 }
-
+-/
+/-
 lemma differentiableAt_integral_param_smooth_1
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
@@ -905,7 +945,7 @@ lemma differentiableAt_integral_param_smooth
         exact hF.differentiableAt -/
     }
 }
-
+-/
 
 
 lemma gradient_Ψ_fixed_domain_η_reduction
@@ -928,14 +968,12 @@ lemma gradient_Ψ_fixed_domain_η_reduction
                LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
     (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
     -/
+
     (h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x)
 :
     ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
 := by
 {
-    -- This is a key lemma: the gradient of an average equals the average of the gradients
-    -- We prove this by showing we can differentiate under the integral sign using the Leibniz rule
-
     -- First, unfold the definitions
     unfold Ψ Ψ_vec
 
@@ -984,11 +1022,11 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     simp [inv_vol, h_nz]
 
-    -- Now prove the key step: gradient of integral equals integral of gradients
     unfold lhs rhs FF
     change ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f p) x
 
-    rw [(grad_integral_swap f x τ hτ )]
+    trace_state
+    rw [(grad_integral_swap f x τ hτ h_diff_func)]
 
     simp_all only
     [
@@ -1006,172 +1044,14 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     ]
 
     unfold FF
-    -- ⊢ DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x
+
     simp only [h_diff_func]
-
-    --simp only [differentiableAt_integral_param_smooth]
-    -- past attempts below
-    /-
-    -- Strategy: Use the relationship between gradient and fderiv,
-    -- then apply the Leibniz rule for fderiv, then convert back.
-    -- ∇ g x = (toDual ℝ _).symm (fderiv ℝ g x)
-    -- So we need: fderiv ℝ (λ x1 ↦ ∫ p, f p x1) x = ∫ p, fderiv ℝ (f p) x
-
-    -- Define the measure
-    let μ := volume.restrict (G_0 (n := n) τ)
-
-    -- Define F : H → α → E where H = EuclideanSpace, α = EuclideanSpace, E = ℝ
-    let F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ := λ x1 p ↦ f p x1
-
-    -- We need F' : α → H →L[ℝ] E, but E = ℝ so H →L[ℝ] ℝ
-    -- F' p should be fderiv ℝ (f p) x, but this depends on x, not just p
-    -- Actually, we want the derivative with respect to x1 at point x
-    -- So F' p = fderiv ℝ (λ x1 ↦ f p x1) x = fderiv ℝ (f p) x
-    let F' : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ := λ p ↦ fderiv ℝ (f p) x
-
-    -- Extract Lipschitz parameters
-    obtain ⟨ε, hε_pos, h_lip⟩ := hf_lip
-
-    -- We need to verify the conditions for hasFDerivAt_integral_of_dominated_loc_of_lip
-    -- 1. s ∈ 𝓝 x - we use ball x ε
-    -- 2. ∀ᶠ x1 in 𝓝 x, AEStronglyMeasurable (F x1) μ
-    -- We have hf_meas : ∀ x1, Measurable (λ p ↦ f p x1) μ
-    -- F x1 p = f p x1, so F x1 = λ p ↦ f p x1
-    have hF_meas' : ∀ᶠ x1 in 𝓝 x, AEStronglyMeasurable (F x1) μ := by
-    {
-        unfold F
-        sorry
-        /-
-        simp only
-        apply eventually_of_forall
-        intro x1
-        -- hf_meas x1 gives us Measurable (λ p ↦ f p x1) μ
-        -- We need AEStronglyMeasurable (λ p ↦ f p x1) μ
-        have := hf_meas x1
-        unfold AEStronglyMeasurable
-        intro s hs
-        -- Measurable implies AEStronglyMeasurable
-        exact ⟨s, hs, this⟩
-        -/
-    }
-
-    -- 3. Integrable (F x) μ
-    have hF_int_x : Integrable (F x) μ := by
-    {
-        unfold F μ
-        --simp only
-        exact hf_int_at_x
-    }
-
-    -- 4. AEStronglyMeasurable F' μ
-    have hF'_meas : AEStronglyMeasurable F' μ := by
-    {
-        unfold F' μ
-        --simp only
-        exact hf_fderiv_meas
-    }
-
-    -- 5. ∀ᵐ a ∂μ, LipschitzOnWith (Real.nnabs <| bound a) (F · a) s
-    -- We have h_lip : ∀ᵐ p ∂μ, LipschitzOnWith (Real.nnabs 1) (f p) (ball x ε)
-    -- F · p = λ x1 ↦ f p x1, so this is exactly what we need
-    have h_lip' : ∀ᵐ p ∂μ, LipschitzOnWith (Real.nnabs (1 : ℝ)) (F · p) (Metric.ball x ε) := by
-    {
-        unfold F
-        --simp only
-        exact h_lip
-    }
-
-    -- 6. Integrable bound μ - bound is constant 1
-    let bound : EuclideanSpace ℝ (Fin n) → ℝ := λ _ ↦ 1
-    have h_bound_int : Integrable (bound : EuclideanSpace ℝ (Fin n) → ℝ) μ := by
-    {
-        unfold bound
-        --simp only [integrable_const]
-        /-
-        have : volume (G_0 (n := n) τ) < ⊤ := G_0_volume_lt_top τ hτ
-        simp [Measure.restrict_apply, this]
-        -/
-        trace_state
-        sorry
-    }
-
-    -- 7. ∀ᵐ a ∂μ, HasFDerivAt (F · a) (F' a) x
-    have h_diff : ∀ᵐ p ∂μ, HasFDerivAt (F · p) (F' p) x := by
-    {
-        unfold F F'
-        /-
-        simp only
-        -- We have hf_diff : ∀ p, DifferentiableAt ℝ (f p) x
-        -- which is ∀ p, HasFDerivAt (f p) (fderiv ℝ (f p) x) x
-        apply ae_of_all
-        intro p
-        exact hf_diff p
-        -/
-        sorry
-    }
-    -/
-    /-
-
-    -- Now apply the theorem
-    have key := hasFDerivAt_integral_of_dominated_loc_of_lip
-      (ball_mem_nhds x hε_pos)
-      hF_meas'
-      hF_int_x
-      hF'_meas
-      h_lip'
-      h_bound_int
-      h_diff
-
-    -- key gives us: Integrable F' μ ∧ HasFDerivAt (fun x1 ↦ ∫ p, F x1 p ∂μ) (∫ p, F' p ∂μ) x
-    -- We need the HasFDerivAt part
-    have h_has_fderiv := key.2
-
-    -- Unfold what this means
-    unfold F F' μ at h_has_fderiv
-    simp only at h_has_fderiv
-
-    -- Now we need to convert from HasFDerivAt to fderiv equality
-    -- HasFDerivAt g lg x means fderiv ℝ g x = lg
-    have h_fderiv_eq : fderiv ℝ (fun x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, fderiv ℝ (f p) x := by
-    {
-        unfold HasFDerivAt at h_has_fderiv
-        simp only [fderiv] at h_has_fderiv
-        exact h_has_fderiv
-    }
-
-    -- Now use the relationship between gradient and fderiv
-    -- ∇ g x = (toDual ℝ _).symm (fderiv ℝ g x)
-    -- So: LHS = (toDual ℝ _).symm (fderiv ℝ (λ x1 ↦ ∫ p, f p x1) x)
-    --         = (toDual ℝ _).symm (∫ p, fderiv ℝ (f p) x)  [by h_fderiv_eq]
-    --         = ∫ p, (toDual ℝ _).symm (fderiv ℝ (f p) x)  [by linearity of toDual.symm]
-    --         = ∫ p, ∇ (f p) x  [by definition of gradient]
-    --         = RHS
-
-    -- Apply toDual to both sides to convert to fderiv
-    have : (toDual ℝ (EuclideanSpace ℝ (Fin n))) (∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f p x1) x) =
-           (toDual ℝ (EuclideanSpace ℝ (Fin n))) (∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ (f p) x) := by
-    {
-        -- LHS: (toDual ℝ _) (∇ (...)) = fderiv ℝ (...) x by toDual_gradient
-        -- RHS: (toDual ℝ _) (∫ p, ∇ (f p) x) = ∫ p, (toDual ℝ _) (∇ (f p) x) by linearity
-        --     = ∫ p, fderiv ℝ (f p) x by toDual_gradient
-        -- And we know fderiv ℝ (∫ p, f p) x = ∫ p, fderiv ℝ (f p) x by h_fderiv_eq
-        rw [toDual_gradient, toDual_gradient]
-        simp only
-        rw [ContinuousLinearMap.integral_apply]
-        · exact h_fderiv_eq
-        · -- Need: Integrable (λ p ↦ (toDual ℝ _) (∇ (f p) x)) μ
-          convert hf_int using 1
-          simp only [toDual_gradient]
-    }
-
-    -- Since toDual is injective, we can conclude
-    exact (toDual ℝ (EuclideanSpace ℝ (Fin n))).injective this
-    -/
 }
 
 
 lemma gradient_Ψ_fixed_domain
     {n : ℕ }
+    --(f : EuclideanSpace ℝ (Fin n) → ℝ)
     (f :
         EuclideanSpace ℝ (Fin n) →
         (EuclideanSpace ℝ (Fin n) → ℝ)
@@ -1179,6 +1059,8 @@ lemma gradient_Ψ_fixed_domain
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
     (hτ : 0 < τ)
+    (h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x x1) x)
+    /-
     (hf_diff : ∀ p, DifferentiableAt ℝ (f p) x)
     (hf_int : Integrable (λ p ↦ ∇ (f p) x) (volume.restrict (G_0 τ)))
     -- Additional assumptions for the Leibniz integral rule
@@ -1187,6 +1069,7 @@ lemma gradient_Ψ_fixed_domain
     (hf_lip : ∃ ε > 0, ∀ᵐ p ∂(volume.restrict (G_0 τ)),
                LipschitzOnWith (Real.nnabs (1 : ℝ)) (f p) (Metric.ball x ε))
     (hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (f p) x) (volume.restrict (G_0 τ)))
+    -/
 :
     (∇
         --(Ψ_lambda_func f τ)
@@ -1216,7 +1099,8 @@ lemma gradient_Ψ_fixed_domain
 {
     change  ∇ (fun x1 ↦ Ψ (fun p ↦ f p x1) (G_0 τ)) x = (lambda_expression f x τ)
     rw [RHS_eta_reduction ]
-    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas)
+    --exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas)
+    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ h_diff_func)
 }
 
 
@@ -1251,11 +1135,15 @@ lemma gradient_translate
 lemma grad_Ψ_distributes
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    /-(f :
+        EuclideanSpace ℝ (Fin n) →
+        (EuclideanSpace ℝ (Fin n) → ℝ)) -/
     (hf : Differentiable ℝ f)
     (τ : ℝ)
     (hτ : τ > 0)
     (x : EuclideanSpace ℝ (Fin n))
     (hf_grad_int : Integrable (λ p ↦ ∇ f (p + x)) (volume.restrict (G_0 τ)))
+    (h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x1) x )
 :
     ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
 := by
@@ -1298,8 +1186,238 @@ lemma grad_Ψ_distributes
     have hf_fderiv_meas : AEStronglyMeasurable (λ p ↦ fderiv ℝ (λ x1 ↦ f (p + x1)) x) (volume.restrict (G_0 τ)) := by
         sorry
 
-    rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas]
+    --rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas]
+    rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ h_diff_func]
     congr 1
     ext p
     rw [← gradient_translate f p x (hf (p + x))]
+}
+
+
+noncomputable def Ψ_vec_1
+    {n : ℕ}
+    (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+:
+    (EuclideanSpace ℝ (Fin n))
+:=
+    (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
+
+noncomputable def lambda_expression_1
+    {n : ℕ}
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+:=
+    --Ψ_vec (fun p ↦ ∇ (fun x1 ↦ (f p) x1) x) (G_0 τ)
+    λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    --Ψ_vec_1 (fun p ↦ ∇ f x) (G_0 τ)
+
+
+lemma RHS_eta_reduction_1
+    {n : ℕ}
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+:
+    --Ψ_vec (fun p ↦ ∇ (fun x1 ↦ (f p) x1) x) (G_0 τ)
+    (lambda_expression_1 f x τ)
+    =
+    --Ψ_vec_1 (fun p ↦ ∇ f x) (G_0 τ)
+    --Ψ_vec_1 (λ p ↦ ∇ (f p) x) (G_0 τ)
+    λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+:=
+    rfl
+
+
+
+
+lemma grad_integral_swap_1
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) →  ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+    (hτ : 0 < τ)
+    (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+:
+    ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
+:= by
+{
+    sorry
+}
+
+
+lemma gradient_Ψ_fixed_domain_η_reduction_1
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+    (hτ : 0 < τ)
+
+    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x1) x)
+    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+    (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+:
+    --∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec_1 (λ x1 ↦ ∇ ( λ p ↦ f (p + x1) )) (G_0 τ)
+    --let lf (x1 p : EuclideanSpace ℝ (Fin n))  := λ p ↦ f (p + x1)
+    --∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec_1 (λ p ↦ ∇ ((lf p x)) ) (G_0 τ)
+    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    --∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
+:= by
+{
+    -- First, unfold the definitions
+    unfold Ψ Ψ_vec_1
+
+    -- Simplify the integrals of constants
+    simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
+
+    -- Let vol be the volume of G_0 τ
+    let vol := volume.real (G_0 (n := n) τ)
+
+    -- Show vol > 0
+    have hvol_pos : 0 < vol := by
+    {
+        have hG0_pos := G_0_volume_pos (n := n) τ hτ
+        have hG0_lt_top := G_0_volume_lt_top (n := n) τ hτ
+        exact ENNReal.toReal_pos (ne_of_gt hG0_pos) (ne_of_lt hG0_lt_top)
+    }
+    have hvol_ne : vol ≠ 0 := ne_of_gt hvol_pos
+
+    change  ∇ (λ x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) / vol) x = (1 / vol) • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
+
+    have h_div : (λ x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) / vol) =
+                 (λ x1 ↦ (1 / vol) • ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) := by
+    {
+        ext x1
+        simp_all only [ne_eq, one_div, smul_eq_mul]
+        rw [@inv_mul_eq_div]
+    }
+
+
+    rw [h_div]
+    have h1_vol_ne : (1 / vol) ≠ 0 := one_div_ne_zero hvol_ne
+    simp_all only [ne_eq, one_div, smul_eq_mul, inv_eq_zero, not_false_eq_true]
+
+    trace_state
+
+    --change ∇ (fun x1 ↦ vol⁻¹ * ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x = vol⁻¹ • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
+
+    let FF := λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)
+    change ∇ (fun x1 ↦ vol⁻¹ * (FF x1) ) x  = vol⁻¹ • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
+
+    rw [lambda_scalar_mul]
+
+    trace_state
+
+    let lhs := ∇ (fun x1 ↦ FF x1) x
+    let rhs := ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
+    let inv_vol : ℝ := vol⁻¹
+
+    have h_nz : inv_vol ≠ 0 := by
+        simp only [ne_eq, inv_eq_zero, not_false_eq_true, inv_vol, vol, hvol_ne]
+
+    change inv_vol • lhs = inv_vol • rhs
+
+    simp [inv_vol, h_nz]
+
+    unfold lhs rhs FF
+
+    trace_state
+    --change ∇ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x = ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
+    change ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1) ) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
+
+    trace_state
+
+    --change  ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
+    rw [(grad_integral_swap_1 f x τ hτ h_diff_func)]
+
+    simp_all only
+    [
+        one_div,
+        ne_eq,
+        inv_eq_zero,
+        not_false_eq_true,
+        vol
+    ]
+    trace_state
+    unfold FF
+
+    trace_state
+
+
+    simp only [h_diff_func]
+}
+
+
+
+lemma gradient_Ψ_fixed_domain_1
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+    (hτ : 0 < τ)
+    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x1) x)
+    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+    (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+:
+    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ))
+    --(∇ (λ x1 ↦ (Ψ f (G_0 τ) ) ) x )
+    =
+    λ x ↦ Ψ_vec_1 ( λ p ↦ ∇ f (p + x)) (G_0 τ)
+:= by
+{
+    trace_state
+    change (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    --change ∇ (fun x1 ↦ Ψ f (G_0 τ)) x = Ψ_vec (fun p ↦ ∇ f x) (G_0 τ)
+    --change (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = (lambda_expression_1 f x τ)
+    --rw [RHS_eta_reduction_1 ]
+    trace_state
+    --exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas)
+    exact (gradient_Ψ_fixed_domain_η_reduction_1 f x τ hτ h_diff_func)
+    -- ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
+
+
+    /-
+    (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
+    -/
+}
+
+
+lemma grad_Ψ_distributes_1
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    --(hf : Differentiable ℝ f)
+    (τ : ℝ)
+    (hτ : τ > 0)
+    (x : EuclideanSpace ℝ (Fin n))
+    --(hf_grad_int : Integrable (λ p ↦ ∇ f (p + x)) (volume.restrict (G_0 τ)))
+    --(h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x1) x )
+    (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+:
+    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec_1 (λ p ↦ (∇ f (p + x))) (G_0 τ)
+:= by
+{
+    -- ∇ (fun x1 ↦ Ψ f (G x1 τ)) x = Ψ_vec (fun p ↦ ∇ f (p + x)) (G_0 τ)
+    trace_state
+    simp_rw [Ψ_translates f τ hτ]
+
+    trace_state
+    -- ∇ (fun x1 ↦ Ψ (fun p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (fun p ↦ ∇ f (p + x)) (G_0 τ)
+
+    -- rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas]
+
+    --let ff : (EuclideanSpace ℝ (Fin n) → ℝ) := λ x1 ↦ (Ψ (λ p ↦ f (p + x1)) (G_0 τ))
+    --change ∇ (ff) x = Ψ_vec (fun p ↦ ∇ f (p + x)) (G_0 τ)
+    trace_state
+
+
+    rw [gradient_Ψ_fixed_domain_1 f x τ hτ h_diff_func]
+    trace_state
+
+    trace_state
+    --congr 1
+    --ext p
+    --rw [← gradient_translate f p x (hf (p + x))]
 }
