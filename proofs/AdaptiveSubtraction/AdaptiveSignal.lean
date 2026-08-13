@@ -617,7 +617,7 @@ lemma RHS_eta_reduction
     rfl
 
 
-
+/-
 lemma grad_integral_swap
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) →  ℝ)
@@ -631,7 +631,7 @@ lemma grad_integral_swap
 {
     sorry
 }
-
+-/
 
 lemma gradient_Ψ_fixed_domain_η_reduction
     {n : ℕ }
@@ -639,8 +639,8 @@ lemma gradient_Ψ_fixed_domain_η_reduction
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
     (hτ : 0 < τ)
-
     (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+    (h_grad_integral_swap : ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x))
 :
     ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
 := by
@@ -698,7 +698,7 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     change ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1) ) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
 
-    rw [(grad_integral_swap f x τ hτ h_diff_func)]
+    rw [h_grad_integral_swap]
 
     simp_all only
     [
@@ -722,11 +722,12 @@ lemma gradient_Ψ_fixed_domain
     (τ : ℝ)
     (hτ : 0 < τ)
     (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+    (h_grad_integral_swap : ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x))
 :
     ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
 := by
 {
-    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ h_diff_func)
+    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ h_diff_func h_grad_integral_swap)
 }
 
 
@@ -738,11 +739,12 @@ lemma grad_Ψ_distributes
     (hτ : τ > 0)
     (x : EuclideanSpace ℝ (Fin n))
     (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
+    (h_grad_integral_swap : ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x))
 :
     ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
 := by
 {
     simp_rw [Ψ_translates f τ hτ]
 
-    rw [gradient_Ψ_fixed_domain f x τ hτ h_diff_func]
+    rw [gradient_Ψ_fixed_domain f x τ hτ h_diff_func h_grad_integral_swap]
 }
