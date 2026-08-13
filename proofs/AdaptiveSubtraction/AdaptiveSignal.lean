@@ -310,6 +310,7 @@ lemma G_vol_translates_1
 }
 -/
 
+/-
 noncomputable def Ψ_vec
     {n : ℕ}
     (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
@@ -318,7 +319,7 @@ noncomputable def Ψ_vec
     EuclideanSpace ℝ (Fin n)
 :=
     (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
-
+-/
 /-
 noncomputable def Ψ_vec_1
     {n : ℕ}
@@ -646,6 +647,27 @@ noncomputable def Ψ_lambda_func
     )
 -/
 
+noncomputable def Ψ_vec
+    {n : ℕ}
+    (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)))
+:
+    (EuclideanSpace ℝ (Fin n))
+:=
+    (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
+
+noncomputable def lambda_expression
+    {n : ℕ}
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+:=
+    --Ψ_vec (fun p ↦ ∇ (fun x1 ↦ (f p) x1) x) (G_0 τ)
+    λ x ↦ Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    --Ψ_vec_1 (fun p ↦ ∇ f x) (G_0 τ)
+
+
+/-
 noncomputable def lambda_expression
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
@@ -653,8 +675,9 @@ noncomputable def lambda_expression
     (τ : ℝ)
 :=
     Ψ_vec (fun p ↦ ∇ (fun x1 ↦ (f p) x1) x) (G_0 τ)
+    -/
 
-
+/-
 lemma RHS_eta_reduction
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) → ℝ)
@@ -667,6 +690,7 @@ lemma RHS_eta_reduction
     Ψ_vec (fun p ↦ ∇ (f p) x) (G_0 τ)
 :=
     rfl
+    -/
 
 -- def E{n : ℕ } := EuclideanSpace ℝ (Fin n)
 
@@ -715,7 +739,7 @@ lemma lambda_scalar_mul
     simp only [h_FF_diff]
 }
 
-
+/-
 
 lemma grad_integral_swap
     {n : ℕ }
@@ -748,7 +772,7 @@ lemma grad_integral_swap
 {
     sorry
 }
-
+-/
 /-
 lemma grad_integral_swap
     {n : ℕ }
@@ -947,7 +971,7 @@ lemma differentiableAt_integral_param_smooth
 }
 -/
 
-
+/-
 lemma gradient_Ψ_fixed_domain_η_reduction
     {n : ℕ }
     (f :
@@ -1047,8 +1071,8 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 
     simp only [h_diff_func]
 }
-
-
+-/
+/-
 lemma gradient_Ψ_fixed_domain
     {n : ℕ }
     --(f : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -1102,7 +1126,7 @@ lemma gradient_Ψ_fixed_domain
     --exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas)
     exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ h_diff_func)
 }
-
+-/
 
 lemma gradient_translate
     {n : ℕ }
@@ -1132,6 +1156,7 @@ lemma gradient_translate
     exact ContinuousLinearMap.comp_id _
 }
 
+/-
 lemma grad_Ψ_distributes
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -1192,47 +1217,41 @@ lemma grad_Ψ_distributes
     ext p
     rw [← gradient_translate f p x (hf (p + x))]
 }
+-/
 
 
-noncomputable def Ψ_vec_1
-    {n : ℕ}
-    (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
-    (Ω : Set (EuclideanSpace ℝ (Fin n)))
-:
-    (EuclideanSpace ℝ (Fin n))
-:=
-    (1 / (∫ _ in Ω, (1 : ℝ))) • (∫ x in Ω, F x)
 
-noncomputable def lambda_expression_1
+
+noncomputable def lambda_expression
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
 :=
     --Ψ_vec (fun p ↦ ∇ (fun x1 ↦ (f p) x1) x) (G_0 τ)
-    λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    λ x ↦ Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
     --Ψ_vec_1 (fun p ↦ ∇ f x) (G_0 τ)
 
 
-lemma RHS_eta_reduction_1
+lemma RHS_eta_reduction
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
 :
     --Ψ_vec (fun p ↦ ∇ (fun x1 ↦ (f p) x1) x) (G_0 τ)
-    (lambda_expression_1 f x τ)
+    (lambda_expression f x τ)
     =
     --Ψ_vec_1 (fun p ↦ ∇ f x) (G_0 τ)
     --Ψ_vec_1 (λ p ↦ ∇ (f p) x) (G_0 τ)
-    λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    λ x ↦ Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
 :=
     rfl
 
 
 
 
-lemma grad_integral_swap_1
+lemma grad_integral_swap
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) →  ℝ)
     (x : EuclideanSpace ℝ (Fin n))
@@ -1247,7 +1266,7 @@ lemma grad_integral_swap_1
 }
 
 
-lemma gradient_Ψ_fixed_domain_η_reduction_1
+lemma gradient_Ψ_fixed_domain_η_reduction
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
@@ -1256,12 +1275,12 @@ lemma gradient_Ψ_fixed_domain_η_reduction_1
 
     (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
 :
-    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
+    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
     --∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = λ x ↦  Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
 := by
 {
     -- First, unfold the definitions
-    unfold Ψ Ψ_vec_1
+    unfold Ψ Ψ_vec
 
     -- Simplify the integrals of constants
     simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, univ_inter, smul_eq_mul, mul_one]
@@ -1278,9 +1297,6 @@ lemma gradient_Ψ_fixed_domain_η_reduction_1
     }
     have hvol_ne : vol ≠ 0 := ne_of_gt hvol_pos
 
-    trace_state
-    --change  (∇ λ x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) / vol) = λ x ↦ (1 / vol) • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
-
     change  ∇ (λ x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) / vol) x = (1 / vol) • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
 
     have h_div : (λ x1 ↦ (∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) / vol) =
@@ -1296,19 +1312,10 @@ lemma gradient_Ψ_fixed_domain_η_reduction_1
     have h1_vol_ne : (1 / vol) ≠ 0 := one_div_ne_zero hvol_ne
     simp_all only [ne_eq, one_div, smul_eq_mul, inv_eq_zero, not_false_eq_true]
 
-    trace_state
-
-    --change ∇ (fun x1 ↦ vol⁻¹ * ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x = vol⁻¹ • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
-
     let FF := λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)
-    trace_state
-    --change  (∇ fun x1 ↦ vol⁻¹ * ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) = fun x ↦ vol⁻¹ • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
-    --funext x
     change ∇ (fun x1 ↦ vol⁻¹ * (FF x1) ) x  = vol⁻¹ • ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
 
     rw [lambda_scalar_mul]
-
-    trace_state
 
     let lhs := ∇ (fun x1 ↦ FF x1) x
     let rhs := ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
@@ -1323,14 +1330,9 @@ lemma gradient_Ψ_fixed_domain_η_reduction_1
 
     unfold lhs rhs FF
 
-    trace_state
-    --change ∇ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x = ∫ (x_1 : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (x_1 + x)
     change ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1) ) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
 
-    trace_state
-
-    --change  ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
-    rw [(grad_integral_swap_1 f x τ hτ h_diff_func)]
+    rw [(grad_integral_swap f x τ hτ h_diff_func)]
 
     simp_all only
     [
@@ -1340,104 +1342,41 @@ lemma gradient_Ψ_fixed_domain_η_reduction_1
         not_false_eq_true,
         vol
     ]
-    trace_state
     unfold FF
-
-    trace_state
-
 
     simp only [h_diff_func]
 }
 
 
 
-lemma gradient_Ψ_fixed_domain_1
+lemma gradient_Ψ_fixed_domain
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
     (hτ : 0 < τ)
-    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x1) x)
-    --(h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
     (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
 :
-    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ))
-    --(∇ (λ x1 ↦ (Ψ f (G_0 τ) ) ) x )
-    =
-    λ x ↦ Ψ_vec_1 ( λ p ↦ ∇ f (p + x)) (G_0 τ)
+    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
 := by
 {
-    trace_state
-    change (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
-    --change ∇ (fun x1 ↦ Ψ f (G_0 τ)) x = Ψ_vec (fun p ↦ ∇ f x) (G_0 τ)
-    --change (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = (lambda_expression_1 f x τ)
-    --rw [RHS_eta_reduction_1 ]
-    trace_state
-    change  (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ))   = λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
-
-    --      ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x =        Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
-
-    --exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas)
-    trace_state
-    --change  (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
-    --      ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
-
-    funext x2
-    change (∇ fun x1 ↦ Ψ (fun p ↦ f (p + x1)) (G_0 τ)) x2 = Ψ_vec_1 (fun p ↦ ∇ f (p + x2)) (G_0 τ)
-
-    have h_diff_func_ext : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x2 := by
-    {
-        sorry
-    }
-
-    exact (gradient_Ψ_fixed_domain_η_reduction_1 f x2 τ hτ h_diff_func_ext)
-
-
-
-    -- ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
-
-
-
-    /-
-    (∇ λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) = λ x ↦ Ψ_vec_1 (λ p ↦ ∇ f (p + x)) (G_0 τ)
-    ∇ (λ x1 ↦ Ψ (λ p ↦ f p x1) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ (f p) x) (G_0 τ)
-    -/
+    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ h_diff_func)
 }
 
 
-lemma grad_Ψ_distributes_1
+
+lemma grad_Ψ_distributes
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
-    --(hf : Differentiable ℝ f)
     (τ : ℝ)
     (hτ : τ > 0)
     (x : EuclideanSpace ℝ (Fin n))
-    --(hf_grad_int : Integrable (λ p ↦ ∇ f (p + x)) (volume.restrict (G_0 τ)))
-    --(h_diff_func : DifferentiableAt ℝ (fun x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f x1) x )
     (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
 :
-    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec_1 (λ p ↦ (∇ f (p + x))) (G_0 τ)
+    ∇ (λ x1 ↦ (Ψ f (G x1 τ))) x = Ψ_vec (λ p ↦ (∇ f (p + x))) (G_0 τ)
 := by
 {
-    -- ∇ (fun x1 ↦ Ψ f (G x1 τ)) x = Ψ_vec (fun p ↦ ∇ f (p + x)) (G_0 τ)
-    trace_state
     simp_rw [Ψ_translates f τ hτ]
 
-    trace_state
-    -- ∇ (fun x1 ↦ Ψ (fun p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (fun p ↦ ∇ f (p + x)) (G_0 τ)
-
-    -- rw [gradient_Ψ_fixed_domain (λ p ↦ λ x1 ↦ f (p + x1)) x τ hτ hf_diff hf_int hf_int_at_x hf_meas hf_lip hf_fderiv_meas]
-
-    --let ff : (EuclideanSpace ℝ (Fin n) → ℝ) := λ x1 ↦ (Ψ (λ p ↦ f (p + x1)) (G_0 τ))
-    --change ∇ (ff) x = Ψ_vec (fun p ↦ ∇ f (p + x)) (G_0 τ)
-    trace_state
-
-
-    rw [gradient_Ψ_fixed_domain_1 f x τ hτ h_diff_func]
-    trace_state
-
-    trace_state
-    --congr 1
-    --ext p
-    --rw [← gradient_translate f p x (hf (p + x))]
+    rw [gradient_Ψ_fixed_domain f x τ hτ h_diff_func]
 }
