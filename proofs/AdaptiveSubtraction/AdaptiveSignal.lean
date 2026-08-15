@@ -839,6 +839,50 @@ theorem S_in_terms_of_Ψ
 
     change Ψ (fun p ↦ I x • 1) (G x τ) + Ψ (fun p ↦ g p) (G x τ) + rhs = I x
     rw [(Ψ_linear_operator_scale (λ p ↦ 1) (G x τ) (I x) hΩ)]
+
+    have h_psi_one: Ψ (fun p ↦ 1) (G x τ) = 1 := by
+    {
+        unfold Ψ
+
+        have hvol : volume.real (G x τ) ≠ 0 := by
+            exact hΩ
+
+        simp [integral_const, hvol]
+    }
+
+    simp only [h_psi_one, smul_eq_mul, mul_one]
+
+    --apply add_left_cancel
+
+    let neg_I := - I x
+
+    change I x + Ψ (fun p ↦ g p) (G x τ) + rhs = I x
+
+    have h_neg_I
+    :
+        I x = -neg_I
+    := by
+    {
+        simp_all only [neg_neg, neg_I]
+    }
+
+    simp only [h_neg_I]
+    rw [@eq_neg_iff_add_eq_zero]
+
+    ring_nf
+
+    unfold g
+
+    let left := λ p ↦ -ρ I B p τ • B x
+    let right := λ p ↦ -μ p I B τ
+    -- Ψ (fun p ↦ -ρ I B p τ • B x - μ p I B τ) (G x τ) + rhs = 0
+    change Ψ (λ p ↦ left p + right p) (G x τ) + rhs = 0
+
+    have hleft : Integrable left (volume.restrict (G x τ)) := sorry
+    have hright : Integrable right (volume.restrict (G x τ)) := sorry
+
+    rw [(Ψ_linear_operator_add left right (G x τ) hleft hright )]
+
     trace_state
 
     -- Ψ (fun p ↦ 1) (G x τ)
