@@ -695,9 +695,176 @@ theorem S_in_terms_of_Ψ
     (τ : ℝ)
     (lower upper :  EuclideanSpace ℝ (Fin n))
     (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+    (hτ: τ > 0 )
 :
     (S I B x τ lower upper Ω) = (μ_full I B lower upper Ω) + (I x) - (Ψ (λ p ↦ ((ρ I B x τ) • (B x))) (G x τ)) - (Ψ (λ p ↦ (μ p I B τ)) (G x τ))
 := by
 {
+    unfold S
+
+    let mu_full : ℝ := μ_full I B lower upper Ω
+    let lhs : ℝ := (1 / G_abs x τ) • ∫ (p : EuclideanSpace ℝ (Fin n)) in G x τ, I x - ρ I B p τ • B x - μ p I B τ
+    change mu_full + lhs = mu_full + I x - Ψ (fun p ↦ ρ I B x τ • B x) (G x τ) - Ψ (fun p ↦ μ p I B τ) (G x τ)
+
+    let rhs_1 : ℝ := Ψ (fun p ↦ μ p I B τ) (G x τ)
+    change mu_full + lhs = mu_full + I x - Ψ (fun p ↦ ρ I B x τ • B x) (G x τ) - rhs_1
+
+    let rhs_2 := Ψ (fun p ↦ ρ I B x τ • B x) (G x τ)
+    change mu_full + lhs = mu_full + I x - rhs_2 - rhs_1
+
+    let neg_mu_full := -mu_full
+
+    have h_neg_mu : mu_full = -neg_mu_full
+        := by
+    {
+        simp_all only [neg_neg, mu_full, neg_mu_full]
+    }
+
+    rw [@eq_sub_iff_add_eq]
+    rw [@eq_sub_iff_add_eq]
+
+    change mu_full + lhs + rhs_1 + rhs_2 = mu_full + I x
+    simp only [h_neg_mu]
+
+    change -(-mu_full) + lhs + rhs_1 + rhs_2 = -neg_mu_full + I x
+    ring_nf
+
+    rw [@eq_neg_add_iff_add_eq]
+
+    unfold neg_mu_full
+
+    ring_nf
+
+    have h_lhs : lhs =  Ψ (λ p ↦ I x - ρ I B p τ • B x - μ p I B τ) (G x τ) := by
+    {
+        unfold lhs Ψ
+        trace_state
+        sorry
+    }
+
+    rw [h_lhs]
+
+    let f := λ p ↦ I x - ρ I B p τ • B x - μ p I B τ
+    let g := λ p ↦ - ρ I B p τ • B x - μ p I B τ
+    change Ψ (f) (G x τ) + rhs_1 + rhs_2 = I x
+
+    have h_fg : f = (λ p ↦ I x) + λ p ↦ (g p) := by
+    {
+        unfold f g
+        simp only [smul_eq_mul, neg_mul]
+        funext
+        simp only [Pi.add_apply]
+        simp [sub_eq_add_neg, add_comm, add_left_comm]
+    }
+
+    rw [h_fg]
+
+    have hI : Integrable (λ p ↦ I x)  (volume.restrict (G x τ)) := sorry
+    have hg : Integrable g (volume.restrict (G x τ)) := sorry
+
+    simp only [add_assoc]
+    let rhs := rhs_1 + rhs_2
+
+    change Ψ ((fun p ↦ I x) + fun p ↦ g p) (G x τ) + rhs = I x
+
+    have h_fun :
+        ((fun p ↦ I x) + fun p ↦ g p) = (fun p ↦ I x + g p)
+    := by
+    {
+        funext p
+        simp
+    }
+
+    rw [h_fun]
+
+
+    rw [(Ψ_linear_operator_add (λ p ↦ I x) g (G x τ) hI hg )]
+
+    have hΩ : volume.real (G x τ) ≠ 0 := by
+    {
+          -- first rewrite the integrals as volume.real
+        have h_int_Gx :
+            ∫ (_ : EuclideanSpace ℝ (Fin n)) in G (n := n) x τ, (1 : ℝ)
+            = volume.real (G (n := n) x τ) := by
+            simp [integral_const, measureReal_restrict_apply,
+                MeasurableSet.univ, univ_inter, smul_eq_mul, mul_one]
+
+        have h_int_G0 :
+            ∫ (_ : EuclideanSpace ℝ (Fin n)) in G_0 (n := n) τ, (1 : ℝ)
+            = volume.real (G_0 (n := n) τ) := by
+            simp [integral_const, measureReal_restrict_apply,
+                MeasurableSet.univ, univ_inter, smul_eq_mul, mul_one]
+
+        -- use your volsEqual lemma
+        have h_eq :=
+            volsEqual (n := n) x τ hτ
+
+        -- rewrite both sides to volume.real
+        have h_vol_eq :
+            volume.real (G (n := n) x τ) = volume.real (G_0 (n := n) τ) := by
+            simpa [h_int_Gx, h_int_G0] using h_eq
+
+        -- positivity of volume on G_0 τ
+        have h_pos_vol_G0 :
+            0 < volume (G_0 (n := n) τ) :=
+            G_0_volume_pos (n := n) τ hτ
+
+        -- turn that into nonzero real volume
+        have h_pos_real_G0 :
+            volume.real (G_0 (n := n) τ) ≠ 0 := by
+            -- volume.real Ω = (volume Ω).toReal, and positive measure gives positive toReal
+            have : 0 < volume.real (G_0 (n := n) τ) := by
+            {
+                have hpos_meas := G_0_volume_pos (n := n) τ hτ
+                have hlt_top := G_0_volume_lt_top (n := n) τ hτ
+                simp only [Measure.real]
+                exact ENNReal.toReal_pos (ne_of_gt hpos_meas) (ne_of_lt hlt_top)
+            }
+            exact ne_of_gt this
+
+        -- finally transport nonzeroness along equality
+        exact h_vol_eq ▸ h_pos_real_G0
+    }
+
+    have h_lam_id
+    :
+        (fun p : EuclideanSpace ℝ (Fin n) ↦ I x) = (fun p : EuclideanSpace ℝ (Fin n) ↦ I x • (1 : ℝ))
+    := by
+    {
+        funext p
+        simp
+    }
+
+    rw [h_lam_id]
+
+    change Ψ (fun p ↦ I x • 1) (G x τ) + Ψ (fun p ↦ g p) (G x τ) + rhs = I x
+    rw [(Ψ_linear_operator_scale (λ p ↦ 1) (G x τ) (I x) hΩ)]
+    trace_state
+
+    -- Ψ (fun p ↦ 1) (G x τ)
+
+    /-
+     Ψ_linear_operator_scale
+    {n : ℕ }
+    (f : EuclideanSpace ℝ (Fin n) → ℝ)
+    (Ω :  Set (EuclideanSpace ℝ (Fin n)) )
+    (α : ℝ )
+    (hΩ : volume.real Ω ≠ 0)
+    -/
+    --unfold rhs_1 rhs_2
+
+
+    --(fun p ↦ I x - ρ I B p τ * B x - μ p I B τ)
+    -- rw? [Ψ_linear_operator_add]
+    trace_state
+
+
+    --change ((1 / G_abs x τ) • ∫ (p : EuclideanSpace ℝ (Fin n)) in G x τ, I x - ρ I B p τ • B x - μ p I B τ) +
+    --   Ψ (fun p ↦ μ p I B τ) (G x τ) + Ψ (fun p ↦ ρ I B x τ • B x) (G x τ) = I x
+
+    trace_state
+
+
+
 
 }
