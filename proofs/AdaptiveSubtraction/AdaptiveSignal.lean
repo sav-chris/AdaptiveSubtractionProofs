@@ -496,21 +496,6 @@ theorem Ψ_translates
 }
 
 
-noncomputable def Ψ_lambda
-    {n : ℕ }
-    (f :
-      EuclideanSpace ℝ (Fin n) →
-      (EuclideanSpace ℝ (Fin n) → ℝ)
-    )
-    (τ : ℝ)
-:=
-    (λ x1 ↦
-      Ψ
-        (λ p ↦ f x1 p)
-        (G_0 τ)
-    )
-
-
 noncomputable def Ψ_vec
     {n : ℕ}
     (F : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
@@ -523,7 +508,7 @@ noncomputable def Ψ_vec
 noncomputable def lambda_expression
     {n : ℕ}
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n))
+    --(x : EuclideanSpace ℝ (Fin n))
     (τ : ℝ)
 :=
     λ x ↦ Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
@@ -603,37 +588,7 @@ lemma gradient_translate
     exact ContinuousLinearMap.comp_id _
 }
 
-
-lemma RHS_eta_reduction
-    {n : ℕ}
-    (f : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n))
-    (τ : ℝ)
-:
-    (lambda_expression f x τ)
-    =
-    λ x ↦ Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
-:=
-    rfl
-
-
-/-
-lemma grad_integral_swap
-    {n : ℕ }
-    (f : EuclideanSpace ℝ (Fin n) →  ℝ)
-    (x : EuclideanSpace ℝ (Fin n))
-    (τ : ℝ)
-    (hτ : 0 < τ)
-    (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
-:
-    ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x)
-:= by
-{
-    sorry
-}
--/
-
-lemma gradient_Ψ_fixed_domain_η_reduction
+lemma gradient_Ψ_fixed_domain
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
     (x : EuclideanSpace ℝ (Fin n))
@@ -714,24 +669,6 @@ lemma gradient_Ψ_fixed_domain_η_reduction
 }
 
 
-
-lemma gradient_Ψ_fixed_domain
-    {n : ℕ }
-    (f : EuclideanSpace ℝ (Fin n) → ℝ)
-    (x : EuclideanSpace ℝ (Fin n))
-    (τ : ℝ)
-    (hτ : 0 < τ)
-    (h_diff_func : DifferentiableAt ℝ (λ x1 ↦ ∫ (x : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (x + x1)) x)
-    (h_grad_integral_swap : ∇ (λ x1 ↦ ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, f (p + x1)) x = ∫ (p : EuclideanSpace ℝ (Fin n)) in G_0 τ, ∇ f (p + x))
-:
-    ∇ (λ x1 ↦ Ψ (λ p ↦ f (p + x1)) (G_0 τ)) x = Ψ_vec (λ p ↦ ∇ f (p + x)) (G_0 τ)
-:= by
-{
-    exact (gradient_Ψ_fixed_domain_η_reduction f x τ hτ h_diff_func h_grad_integral_swap)
-}
-
-
-
 lemma grad_Ψ_distributes
     {n : ℕ }
     (f : EuclideanSpace ℝ (Fin n) → ℝ)
@@ -747,4 +684,20 @@ lemma grad_Ψ_distributes
     simp_rw [Ψ_translates f τ hτ]
 
     rw [gradient_Ψ_fixed_domain f x τ hτ h_diff_func h_grad_integral_swap]
+}
+
+
+
+theorem S_in_terms_of_Ψ
+    {n:ℕ}
+    (I B : EuclideanSpace ℝ (Fin n) → ℝ)
+    (x : EuclideanSpace ℝ (Fin n))
+    (τ : ℝ)
+    (lower upper :  EuclideanSpace ℝ (Fin n))
+    (Ω : Set (EuclideanSpace ℝ (Fin n)) := (hypercube lower upper))
+:
+    (S I B x τ lower upper Ω) = (μ_full I B lower upper Ω) + (I x) - (Ψ (λ p ↦ ((ρ I B x τ) • (B x))) (G x τ)) - (Ψ (λ p ↦ (μ p I B τ)) (G x τ))
+:= by
+{
+
 }
